@@ -8,6 +8,10 @@ from sqlalchemy.orm import sessionmaker
 # (e.g. from Neon: https://neon.tech or Supabase: https://supabase.com)
 # If DATABASE_URL is not set, falls back to SQLite for local development.
 
+import logging
+
+logger = logging.getLogger("auth")
+
 SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./ai_sales_os.db")
 
 # Fix for cloud providers that use legacy postgres:// scheme
@@ -15,6 +19,7 @@ if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    logger.warning("DATABASE CONNECTION: Using ephemeral SQLite database. Data will NOT persist across deployments.")
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )

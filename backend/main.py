@@ -11,6 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(message)s")
+logger = logging.getLogger("auth")
 
 from .database import engine, Base, get_db
 from . import models, schemas
@@ -96,10 +100,18 @@ def hash_password(pw: str) -> str:
 
 def verify_password(pw: str, pw_hash: str) -> bool:
     try:
+        logger.info(f"Auth: Verifying password against hash length {len(pw_hash)}")
         if len(pw_hash) == 64 and not pw_hash.startswith("$2b$"):
-            return hashlib.sha256(pw.encode("utf-8")).hexdigest() == pw_hash
-        return bcrypt.checkpw(pw.encode('utf-8'), pw_hash.encode('utf-8'))
-    except Exception:
+            logger.info("Auth: Using legacy SHA256 verification")
+            result = hashlib.sha256(pw.encode("utf-8")).hexdigest() == pw_hash
+            logger.info(f"Auth: Verification result: {result}")
+            return result
+        logger.info("Auth: Using bcrypt verification")
+        result = bcrypt.checkpw(pw.encode('utf-8'), pw_hash.encode('utf-8'))
+        logger.info(f"Auth: Verification result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Auth: Exception during password verification: {e}")
         return False
 
 def get_current_admin(request: Request, db: Session = Depends(get_db)):
@@ -142,6 +154,7 @@ def calculate_lead_score(deal, customer) -> int:
 # Seed database function
 def seed_database(db: Session):
     if db.query(models.Company).count() == 0:
+        logger.warning("DATABASE SEEDING: Database is empty. Creating default admin account. This usually means the database was just wiped.")
         company = models.Company(name="GarmentX Manufacturing")
         db.add(company)
         db.commit()
@@ -217,9 +230,18 @@ def on_startup():
 
 @app.post("/login")
 def login(req: schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
+    logger.info(f"Auth: Login attempt for username: '{req.username}'")
     admin = db.query(models.Admin).filter(models.Admin.username == req.username).first()
-    if not admin or not verify_password(req.password, admin.password_hash):
+    
+    if not admin:
+        logger.warning(f"Auth: Login failed - User '{req.username}' not found in database")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+        
+    if not verify_password(req.password, admin.password_hash):
+        logger.warning(f"Auth: Login failed - Invalid password for user '{req.username}'")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    logger.info(f"Auth: Login successful for user '{req.username}' (ID: {admin.id})")
     
     token = secrets.token_hex(32)
     admin.session_token = token
@@ -230,10 +252,13 @@ def login(req: schemas.LoginRequest, response: Response, db: Session = Depends(g
 
 @app.post("/signup")
 def signup(req: schemas.SignupRequest, response: Response, db: Session = Depends(get_db)):
+    logger.info(f"Auth: Registration attempt for username: '{req.username}'")
     existing_admin = db.query(models.Admin).filter(models.Admin.username == req.username).first()
     if existing_admin:
+        logger.warning(f"Auth: Registration failed - Username '{req.username}' already registered")
         raise HTTPException(status_code=400, detail="Username already registered")
         
+    logger.info(f"Auth: Creating new company and admin for '{req.username}'")
     company = models.Company(
         name=req.company_name,
         created_at=datetime.datetime.utcnow().isoformat() + "Z"
