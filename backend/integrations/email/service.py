@@ -47,31 +47,36 @@ class EmailIntegrationService:
         }
 
     def _poll_inbox(self):
-        backoff = 30  # start at 30 seconds
+        backoff = 30
+        mail = None
         while self.is_running:
             try:
-                self._check_for_new_emails()
+                if not mail:
+                    print("[Email] Connecting to IMAP server...")
+                    mail = imaplib.IMAP4_SSL(self.imap_server, 993)
+                    mail.login(self.email_address, self.app_password)
+                
+                self._check_for_new_emails(mail)
                 self.last_poll_time = datetime.datetime.utcnow().isoformat() + "Z"
                 self.last_error = None
-                backoff = 30  # reset on success
-            except (OSError, imaplib.IMAP4.error) as e:
+                backoff = 30
+                time.sleep(backoff)
+            except (OSError, imaplib.IMAP4.error, imaplib.IMAP4.abort) as e:
                 self.last_error = str(e)
                 print(f"[Email] Network/IMAP Error (retrying in {backoff}s): {e}")
-                backoff = min(backoff * 2, 300)  # max 5 min backoff
+                mail = None  # Reset connection on network error
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 300)
             except Exception as e:
                 self.last_error = str(e)
                 print(f"[Email] Unexpected Error: {e}")
-                backoff = 60
-            time.sleep(backoff)
+                mail = None
+                time.sleep(60)
 
-    def _check_for_new_emails(self):
-        mail = imaplib.IMAP4_SSL(self.imap_server, 993)
-        mail.login(self.email_address, self.app_password)
+    def _check_for_new_emails(self, mail):
         mail.select("INBOX")
-
         status, messages = mail.search(None, "UNSEEN")
         if status != "OK" or not messages[0]:
-            mail.logout()
             return
 
         email_ids = messages[0].split()
@@ -89,8 +94,6 @@ class EmailIntegrationService:
                         self._parse_and_save(msg)
             except Exception as e:
                 print(f"[Email] Error processing email id {email_id}: {e}")
-
-        mail.logout()
 
     def _parse_and_save(self, msg):
         # --- Subject ---
