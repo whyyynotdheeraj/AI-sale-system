@@ -1185,6 +1185,57 @@ def get_email_status():
     """Check if the Gmail integration is running correctly."""
     return email_service.get_status()
 
+@app.get("/api/email/debug")
+def get_email_debug():
+    """Debug endpoint to fetch the 5 most recent emails (even if read) to see why they are skipped."""
+    import imaplib
+    import email
+    from email.header import decode_header
+    
+    if not email_service.email_address:
+        return {"error": "Email not configured"}
+        
+    try:
+        mail = imaplib.IMAP4_SSL(email_service.imap_server, 993)
+        mail.login(email_service.email_address, email_service.app_password)
+        mail.select("INBOX")
+        
+        # Search ALL emails, not just UNSEEN
+        status, messages = mail.search(None, "ALL")
+        if status != "OK" or not messages[0]:
+            return {"status": "No emails found"}
+            
+        email_ids = messages[0].split()
+        recent_ids = email_ids[-5:] # get last 5
+        
+        results = []
+        for email_id in recent_ids:
+            res, msg_data = mail.fetch(email_id, "(RFC822)")
+            for response_part in msg_data:
+                if isinstance(response_part, tuple):
+                    msg = email.message_from_bytes(response_part[1])
+                    
+                    raw_subject = msg.get("Subject", "No Subject")
+                    subject_parts = decode_header(raw_subject)
+                    subject = ""
+                    for part, enc in subject_parts:
+                        if isinstance(part, bytes):
+                            subject += part.decode(enc or "utf-8", errors="replace")
+                        else:
+                            subject += str(part)
+                            
+                    sender_raw = msg.get("From", "")
+                    
+                    results.append({
+                        "id": email_id.decode(),
+                        "sender": sender_raw,
+                        "subject": subject
+                    })
+        mail.logout()
+        return {"recent_emails": results[::-1]}
+    except Exception as e:
+        return {"error": str(e)}
+
 # ── Analytics Endpoint ────────────────────────────────────────
 
 @app.get("/api/analytics")
