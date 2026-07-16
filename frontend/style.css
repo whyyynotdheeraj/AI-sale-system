@@ -47,6 +47,175 @@
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ══════════════════════════════════════════════
+   DARK MODE THEME
+   ══════════════════════════════════════════════ */
+[data-theme="dark"] {
+    --bg-app: #0b0f1a;
+    --bg-card: #141926;
+    --bg-sidebar: #080c14;
+    --bg-sidebar-hover: #1a2035;
+    --border-color: #1e293b;
+
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-inverse: #0f172a;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .navbar {
+    background: #141926;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .search-bar input,
+[data-theme="dark"] .search-box input {
+    background: #1a2035;
+    color: #e2e8f0;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .conv-card {
+    border-color: #1e293b;
+}
+[data-theme="dark"] .conv-card:hover {
+    background: #1a2035;
+}
+[data-theme="dark"] .conv-card.active {
+    background: #1a2035;
+    border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .panel-left {
+    background: #141926;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .panel-center {
+    background: #0b0f1a;
+}
+
+[data-theme="dark"] .chat-messages-container {
+    background: #0b0f1a;
+}
+
+[data-theme="dark"] .msg-bubble {
+    background: #1a2035;
+    color: #e2e8f0;
+}
+[data-theme="dark"] .msg-wrapper.right .msg-bubble {
+    background: var(--color-primary);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .chat-input-bar {
+    background: #141926;
+    border-color: #1e293b;
+}
+[data-theme="dark"] .chat-input-bar input,
+[data-theme="dark"] .chat-input-bar textarea,
+[data-theme="dark"] #chat-input {
+    background: #1a2035;
+    color: #e2e8f0;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .panel-right {
+    background: #141926;
+    border-color: #1e293b;
+}
+[data-theme="dark"] .panel-right .detail-label {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .settings-page,
+[data-theme="dark"] .settings-content {
+    background: #141926;
+}
+
+[data-theme="dark"] .settings-tab {
+    color: #94a3b8;
+}
+[data-theme="dark"] .settings-tab.active {
+    color: var(--color-primary);
+}
+
+[data-theme="dark"] .settings-section {
+    background: #1a2035;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="tel"],
+[data-theme="dark"] input[type="url"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: #141926;
+    color: #e2e8f0;
+    border-color: #2d3748;
+}
+
+[data-theme="dark"] .modal-content {
+    background: #141926;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .filter-btn {
+    color: #94a3b8;
+}
+[data-theme="dark"] .filter-btn.active,
+[data-theme="dark"] .filter-btn:hover {
+    color: var(--color-primary);
+}
+
+[data-theme="dark"] .team-table tr:hover td {
+    background-color: #1a2035;
+}
+
+[data-theme="dark"] .theme-card {
+    background: #1a2035;
+    border-color: #2d3748;
+    color: #94a3b8;
+}
+[data-theme="dark"] .theme-card.active {
+    border-color: var(--color-primary);
+    background-color: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+}
+
+[data-theme="dark"] .toast {
+    background: #1a2035;
+    color: #e2e8f0;
+    border-color: #2d3748;
+}
+
+[data-theme="dark"] .analytics-kpi-card,
+[data-theme="dark"] .analytics-chart-card {
+    background: #141926;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .top-customers-table tr:hover td {
+    background: #1a2035;
+}
+
+[data-theme="dark"] .funnel-bar-container,
+[data-theme="dark"] .product-bar-track {
+    background: #1a2035;
+}
+
+[data-theme="dark"] .chat-header {
+    background: #141926;
+    border-color: #1e293b;
+}
+
 /* Base Reset */
 * {
     margin: 0;

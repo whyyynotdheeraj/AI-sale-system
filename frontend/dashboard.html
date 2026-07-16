@@ -12,6 +12,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style -->
     <link rel="stylesheet" href="style.css">
+    <!-- Apply saved theme instantly to prevent flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('ai-sales-os-theme') || 'light';
+            if (t === 'system') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
 </head>
 <body>
     <div class="app-container">

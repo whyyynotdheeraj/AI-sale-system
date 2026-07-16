@@ -547,6 +547,7 @@ function appendMessage(msg) {
     `;
 
     chatMessagesContainer.appendChild(wrapper);
+    scrollChatToBottom();
 }
 
 // Update Details panel
@@ -1125,6 +1126,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customColorPicker) customColorPicker.addEventListener('input', (e) => {
         colorSwatches.forEach(s => s.classList.remove('active'));
         document.documentElement.style.setProperty('--color-primary', e.target.value);
+    });
+
+    // ── Theme / Dark Mode Toggle ──────────────────────────────
+    const themeCards = document.querySelectorAll('.theme-card');
+    
+    function applyTheme(theme) {
+        if (theme === 'system') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        
+        // Update active card
+        themeCards.forEach(card => {
+            card.classList.toggle('active', card.getAttribute('data-theme') === theme);
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('ai-sales-os-theme', theme);
+    }
+    
+    // Apply saved theme on load
+    const savedTheme = localStorage.getItem('ai-sales-os-theme') || 'light';
+    applyTheme(savedTheme);
+    
+    // Listen for theme card clicks
+    themeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const theme = card.getAttribute('data-theme');
+            applyTheme(theme);
+            showToast(`Theme changed to ${theme.charAt(0).toUpperCase() + theme.slice(1)}`);
+        });
+    });
+    
+    // Listen for system theme changes (when "System" is selected)
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (localStorage.getItem('ai-sales-os-theme') === 'system') {
+            applyTheme('system');
+        }
     });
 
     document.getElementById('save-settings-appearance')?.addEventListener('click', function() {
