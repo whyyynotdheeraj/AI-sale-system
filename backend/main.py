@@ -1178,6 +1178,13 @@ def send_message(msg_in: schemas.MessageCreate, db: Session = Depends(get_db)):
         "ai_reply": ai_reply_msg
     }
 
+# ── Email Status Endpoint ─────────────────────────────────────
+
+@app.get("/api/email/status")
+def get_email_status():
+    """Check if the Gmail integration is running correctly."""
+    return email_service.get_status()
+
 # ── Analytics Endpoint ────────────────────────────────────────
 
 @app.get("/api/analytics")
