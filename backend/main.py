@@ -308,8 +308,16 @@ def update_settings(update: schemas.SettingsUpdate, admin=Depends(get_current_ad
     return settings
 
 @app.get("/api/branding")
-def get_branding(db: Session = Depends(get_db)):
-    settings = db.query(models.Settings).first()
+def get_branding(request: Request, db: Session = Depends(get_db)):
+    # Try to get branding for logged-in user's company, fallback to first
+    token = request.cookies.get("session_token")
+    settings = None
+    if token:
+        admin = db.query(models.Admin).filter(models.Admin.session_token == token).first()
+        if admin:
+            settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    if not settings:
+        settings = db.query(models.Settings).first()
     if settings:
         return {
             "company_name": settings.business_name,
@@ -334,8 +342,10 @@ def create_team_member(member: schemas.TeamMemberCreate, admin=Depends(get_curre
     return new_member
 
 @app.get("/customers", response_model=List[schemas.CustomerResponse])
-def get_customers(db: Session = Depends(get_db)):
-    customers_list = db.query(models.Customer).all()
+def get_customers(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    customers_list = db.query(models.Customer).filter(
+        models.Customer.company_id == admin.company_id
+    ).all()
     res = []
     for c in customers_list:
         conv = c.conversations[0] if c.conversations else None
@@ -350,14 +360,12 @@ def get_customers(db: Session = Depends(get_db)):
             "email": c.email,
             "city": c.city,
             "internal_notes": c.internal_notes,
-            # Deal mapping
             "interested_product": deal.interested_product if deal else None,
             "quantity": deal.quantity if deal else None,
             "budget": deal.budget if deal else None,
             "lead_status": calculate_lead_status(deal, c) if deal else "Cold",
             "lead_score": deal.lead_score if deal else 10,
             "ai_summary": deal.ai_summary if deal else None,
-            # Conversation mapping
             "channel": conv.channel if conv else "Website",
             "status": conv.status if conv else "New",
             "unread": conv.unread if conv else False,
@@ -369,8 +377,11 @@ def get_customers(db: Session = Depends(get_db)):
     return res
 
 @app.get("/customers/{customer_id}", response_model=schemas.CustomerResponse)
-def get_customer(customer_id: int, db: Session = Depends(get_db)):
-    c = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
+def get_customer(customer_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    c = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.company_id == admin.company_id
+    ).first()
     if not c:
         raise HTTPException(status_code=404, detail="Customer not found")
     conv = c.conversations[0] if c.conversations else None
@@ -400,12 +411,14 @@ def get_customer(customer_id: int, db: Session = Depends(get_db)):
     }
 
 @app.put("/customers/{customer_id}", response_model=schemas.CustomerResponse)
-def update_customer(customer_id: int, update_data: schemas.CustomerUpdate, db: Session = Depends(get_db)):
-    c = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
+def update_customer(customer_id: int, update_data: schemas.CustomerUpdate, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    c = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.company_id == admin.company_id
+    ).first()
     if not c:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    # Update Customer fields
     if update_data.name is not None: c.name = update_data.name
     if update_data.buyer_company_name is not None: c.buyer_company_name = update_data.buyer_company_name
     if update_data.phone is not None: c.phone = update_data.phone
@@ -413,24 +426,29 @@ def update_customer(customer_id: int, update_data: schemas.CustomerUpdate, db: S
     if update_data.city is not None: c.city = update_data.city
     if update_data.internal_notes is not None: c.internal_notes = update_data.internal_notes
 
-    # Update Deal fields
     deal = c.deals[0] if c.deals else None
     if deal:
         if update_data.interested_product is not None: deal.interested_product = update_data.interested_product
         if update_data.quantity is not None: deal.quantity = update_data.quantity
         if update_data.budget is not None: deal.budget = update_data.budget
         if update_data.ai_summary is not None: deal.ai_summary = update_data.ai_summary
-        
         deal.lead_score = calculate_lead_score(deal, c)
     
     db.commit()
     db.refresh(c)
     if deal: db.refresh(deal)
     
-    return get_customer(customer_id, db)
+    return get_customer(customer_id, admin=admin, db=db)
 
 @app.get("/messages/{customer_id}", response_model=List[schemas.MessageResponse])
-def get_messages(customer_id: int, db: Session = Depends(get_db)):
+def get_messages(customer_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    # Verify customer belongs to this company
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.company_id == admin.company_id
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
     conv = db.query(models.Conversation).filter(models.Conversation.customer_id == customer_id).first()
     if not conv:
         return []
@@ -440,10 +458,16 @@ def get_messages(customer_id: int, db: Session = Depends(get_db)):
     return db.query(models.Message).filter(models.Message.conversation_id == conv.id).all()
 
 @app.post("/messages")
-def send_message(msg_in: schemas.MessageCreate, db: Session = Depends(get_db)):
+def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    # Verify customer belongs to this company
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == msg_in.customer_id,
+        models.Customer.company_id == admin.company_id
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
     conv = db.query(models.Conversation).filter(models.Conversation.customer_id == msg_in.customer_id).first()
     if not conv:
-        # Just create dummy if it doesn't exist
         conv = models.Conversation(customer_id=msg_in.customer_id)
         db.add(conv)
         db.commit()
@@ -466,28 +490,57 @@ def send_message(msg_in: schemas.MessageCreate, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 @app.get("/api/analytics")
-def get_analytics(db: Session = Depends(get_db)):
-    # Basic analytics mock
+def get_analytics(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    company_id = admin.company_id
+    customers = db.query(models.Customer).filter(models.Customer.company_id == company_id).all()
+    deals = db.query(models.Deal).filter(models.Deal.company_id == company_id).all()
+    
+    total_pipeline = sum(d.budget or 0 for d in deals)
+    scores = [d.lead_score or 0 for d in deals]
+    avg_score = int(sum(scores) / len(scores)) if scores else 0
+    
+    hot = warm = cold = 0
+    for d in deals:
+        c = db.query(models.Customer).filter(models.Customer.id == d.customer_id).first()
+        if c:
+            status = calculate_lead_status(d, c)
+            if status == "Hot": hot += 1
+            elif status == "Warm": warm += 1
+            else: cold += 1
+    
+    total_messages = 0
+    msg_customer = msg_ai = msg_human = 0
+    ai_managed = human_managed = 0
+    for c in customers:
+        for conv in c.conversations:
+            if conv.is_ai_managed: ai_managed += 1
+            else: human_managed += 1
+            msgs = db.query(models.Message).filter(models.Message.conversation_id == conv.id).all()
+            total_messages += len(msgs)
+            for m in msgs:
+                if m.sender == "customer": msg_customer += 1
+                elif m.sender == "ai": msg_ai += 1
+                else: msg_human += 1
+    
+    stages = {"New Inquiry": 0, "Qualifying": 0, "Quotation Sent": 0, "Closed Won": 0, "Closed Lost": 0}
+    for d in deals:
+        if d.stage in stages: stages[d.stage] += 1
+    
     return {
         "summary": {
-            "total_customers": 1,
-            "total_pipeline": 250000,
-            "hot_pipeline": 250000,
-            "warm_pipeline": 0,
-            "total_messages": 3,
-            "avg_lead_score": 85
+            "total_customers": len(customers),
+            "total_pipeline": total_pipeline,
+            "hot_pipeline": sum(d.budget or 0 for d in deals if db.query(models.Customer).filter(models.Customer.id == d.customer_id).first() and calculate_lead_status(d, db.query(models.Customer).filter(models.Customer.id == d.customer_id).first()) == "Hot"),
+            "warm_pipeline": sum(d.budget or 0 for d in deals if db.query(models.Customer).filter(models.Customer.id == d.customer_id).first() and calculate_lead_status(d, db.query(models.Customer).filter(models.Customer.id == d.customer_id).first()) == "Warm"),
+            "total_messages": total_messages,
+            "avg_lead_score": avg_score
         },
-        "lead_distribution": {"hot": 1, "warm": 0, "cold": 0},
-        "conversation_management": {"ai_managed": 1, "human_managed": 0},
-        "message_breakdown": {"customer": 2, "ai": 1, "human": 0},
-        "funnel": [
-            {"stage": "New Inquiry", "count": 1},
-            {"stage": "Qualified", "count": 1},
-            {"stage": "Quotation Sent", "count": 1},
-            {"stage": "Closed Won", "count": 0}
-        ],
+        "lead_distribution": {"hot": hot, "warm": warm, "cold": cold},
+        "conversation_management": {"ai_managed": ai_managed, "human_managed": human_managed},
+        "message_breakdown": {"customer": msg_customer, "ai": msg_ai, "human": msg_human},
+        "funnel": [{"stage": s, "count": c} for s, c in stages.items()],
         "top_customers": [],
-        "products": {"Kurti Catalog A": 1}
+        "products": {}
     }
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
