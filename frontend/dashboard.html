@@ -319,6 +319,7 @@
                     <div class="settings-tab" data-target="settings-appearance">Appearance</div>
                     <div class="settings-tab" data-target="settings-security">Security</div>
                     <div class="settings-tab" data-target="settings-team">Team</div>
+                    <div class="settings-tab" data-target="settings-integrations">Integrations</div>
                 </div>
 
                 <div class="settings-content-scroll">
@@ -584,6 +585,42 @@
                             </table>
                         </div>
                     </div>
+                    
+                    <!-- Integrations Settings -->
+                    <div class="settings-content" id="settings-integrations">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title"><i class="fa-solid fa-envelope text-email"></i> Email Integration (Gmail IMAP)</h3>
+                            <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">Connect your company's Gmail account to automatically import emails into AI Sales OS. You MUST use a Google App Password, not your regular password.</p>
+                            <div class="form-group">
+                                <label class="form-label">Gmail Address</label>
+                                <input type="email" class="form-input" id="setting-gmail-address" placeholder="e.g. sales@yourcompany.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Google App Password</label>
+                                <input type="password" class="form-input" id="setting-gmail-app-password" placeholder="16-character app password">
+                            </div>
+                            <button class="btn-primary" id="save-settings-integrations-email">Save Email Credentials</button>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3 class="settings-section-title"><i class="fa-brands fa-whatsapp text-whatsapp"></i> WhatsApp Cloud API</h3>
+                            <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">Connect your official WhatsApp Business API to sync chats directly.</p>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number ID</label>
+                                <input type="text" class="form-input" id="setting-whatsapp-phone-id" placeholder="e.g. 10293847561">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Permanent Access Token (API Key)</label>
+                                <input type="password" class="form-input" id="setting-whatsapp-api-key" placeholder="EAAI...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Webhook Verify Token (Optional)</label>
+                                <input type="text" class="form-input" id="setting-whatsapp-verify-token" placeholder="Create a secret token">
+                            </div>
+                            <button class="btn-primary" id="save-settings-integrations-wa">Save WhatsApp Credentials</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

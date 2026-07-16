@@ -163,6 +163,10 @@ class SettingsResponse(BaseModel):
     theme: Optional[str] = None
     primary_color: Optional[str] = None
     font_size: Optional[str] = None
+    gmail_address: Optional[str] = None
+    whatsapp_phone_number_id: Optional[str] = None
+    whatsapp_verify_token: Optional[str] = None
+    # Passwords/API keys are intentionally excluded from Response for security
     class Config:
         from_attributes = True
 
@@ -190,6 +194,11 @@ class SettingsUpdate(BaseModel):
     theme: Optional[str] = None
     primary_color: Optional[str] = None
     font_size: Optional[str] = None
+    gmail_address: Optional[str] = None
+    gmail_app_password: Optional[str] = None
+    whatsapp_api_key: Optional[str] = None
+    whatsapp_phone_number_id: Optional[str] = None
+    whatsapp_verify_token: Optional[str] = None
 
 # ── Team Member Schemas ───────────────────────────────────────
 

@@ -128,6 +128,13 @@ class Settings(Base):
     primary_color = Column(String, default="#6366f1")
     font_size = Column(String, default="medium")  # small, medium, large
 
+    # Integrations
+    gmail_address = Column(String, nullable=True)
+    gmail_app_password = Column(String, nullable=True)
+    whatsapp_api_key = Column(String, nullable=True)
+    whatsapp_phone_number_id = Column(String, nullable=True)
+    whatsapp_verify_token = Column(String, nullable=True)
+
     company = relationship("Company", back_populates="settings")
 
 class TeamMember(Base):

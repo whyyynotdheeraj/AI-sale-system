@@ -966,6 +966,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('setting-notify-email').checked = currentSettings.email_notifications;
                 document.getElementById('setting-notify-sound').checked = currentSettings.sound_notifications;
                 document.getElementById('setting-notify-alerts').checked = currentSettings.unread_alerts;
+
+                // Integrations
+                document.getElementById('setting-gmail-address').value = currentSettings.gmail_address || '';
+                // Don't populate passwords from backend for security
+                document.getElementById('setting-whatsapp-phone-id').value = currentSettings.whatsapp_phone_number_id || '';
+                document.getElementById('setting-whatsapp-verify-token').value = currentSettings.whatsapp_verify_token || '';
             }
         } catch(e) { console.error('Error loading settings', e); }
     }
@@ -1171,6 +1177,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-settings-appearance')?.addEventListener('click', function() {
         const color = document.documentElement.style.getPropertyValue('--color-primary') || '#6366f1';
         saveSettings({ primary_color: color }, this);
+    });
+
+    // Integrations - Email
+    document.getElementById('save-settings-integrations-email')?.addEventListener('click', function() {
+        const gmail = document.getElementById('setting-gmail-address').value.trim();
+        const appPw = document.getElementById('setting-gmail-app-password').value.trim();
+        if (!gmail || !appPw) {
+            showToast('Please fill in both Gmail address and App Password.', 'error');
+            return;
+        }
+        saveSettings({ gmail_address: gmail, gmail_app_password: appPw }, this);
+    });
+
+    // Integrations - WhatsApp
+    document.getElementById('save-settings-integrations-wa')?.addEventListener('click', function() {
+        const phoneId = document.getElementById('setting-whatsapp-phone-id').value.trim();
+        const apiKey = document.getElementById('setting-whatsapp-api-key').value.trim();
+        const verifyToken = document.getElementById('setting-whatsapp-verify-token').value.trim();
+        if (!phoneId || !apiKey) {
+            showToast('Please fill in Phone Number ID and API Key.', 'error');
+            return;
+        }
+        saveSettings({ whatsapp_phone_number_id: phoneId, whatsapp_api_key: apiKey, whatsapp_verify_token: verifyToken }, this);
     });
 
     // Team Members
