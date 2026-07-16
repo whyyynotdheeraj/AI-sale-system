@@ -47,15 +47,22 @@ class EmailIntegrationService:
         }
 
     def _poll_inbox(self):
+        backoff = 30  # start at 30 seconds
         while self.is_running:
             try:
                 self._check_for_new_emails()
                 self.last_poll_time = datetime.datetime.utcnow().isoformat() + "Z"
                 self.last_error = None
+                backoff = 30  # reset on success
+            except (OSError, imaplib.IMAP4.error) as e:
+                self.last_error = str(e)
+                print(f"[Email] Network/IMAP Error (retrying in {backoff}s): {e}")
+                backoff = min(backoff * 2, 300)  # max 5 min backoff
             except Exception as e:
                 self.last_error = str(e)
-                print(f"[Email] IMAP Error: {e}")
-            time.sleep(30)
+                print(f"[Email] Unexpected Error: {e}")
+                backoff = 60
+            time.sleep(backoff)
 
     def _check_for_new_emails(self):
         mail = imaplib.IMAP4_SSL(self.imap_server, 993)
