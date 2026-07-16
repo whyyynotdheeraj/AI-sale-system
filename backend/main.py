@@ -211,7 +211,7 @@ def seed_database(db: Session):
 def on_startup():
     db = next(get_db())
     seed_database(db)
-    # email_service.start()  # Disabled to save quota
+    email_service.start()
 
 # ── Endpoints ──────────────────────────────────────────────
 
