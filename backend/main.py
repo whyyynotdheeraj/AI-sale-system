@@ -16,6 +16,7 @@ from . import models, schemas
 from .ws_manager import manager
 
 # Import Integrations
+from .integrations.email.service import email_service
 from .integrations.website.router import router as website_router
 from .integrations.email.router import router as email_router
 from .integrations.whatsapp.router import router as whatsapp_router
@@ -659,6 +660,9 @@ def seed_database(db: Session):
 def startup_event():
     db = next(get_db())
     seed_database(db)
+    
+    # Start Email IMAP Polling
+    email_service.start()
 
 # ══════════════════════════════════════════════════════════════
 # API ENDPOINTS
@@ -1159,6 +1163,14 @@ def send_message(msg_in: schemas.MessageCreate, db: Session = Depends(get_db)):
         db.commit()
         if ai_reply_msg:
             db.refresh(ai_reply_msg)
+
+    # If human replies and channel is Email, actually send the email out via SMTP
+    if msg_in.sender == "human" and conv.channel == "Email":
+        email_service.send_email(
+            to_email=cust.email,
+            subject="Re: Your Inquiry",
+            body=msg_in.text
+        )
 
     return {
         "status": "success",
