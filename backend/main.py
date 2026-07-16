@@ -490,18 +490,4 @@ def get_analytics(db: Session = Depends(get_db)):
         "products": {"Kurti Catalog A": 1}
     }
 
-@app.get("/api/debug/integrations")
-def debug_integrations(db: Session = Depends(get_db)):
-    results = []
-    admins = db.query(models.Admin).all()
-    for admin in admins:
-        settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
-        results.append({
-            "username": admin.username,
-            "admin_name": admin.name,
-            "company_name": admin.company.name if admin.company else "Unknown",
-            "gmail_address": settings.gmail_address if settings else None
-        })
-    return results
-
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
