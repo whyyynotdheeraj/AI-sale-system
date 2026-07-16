@@ -47,8 +47,15 @@ const filterButtons = document.querySelectorAll('.filter-btn');
 
 // Startup & Initialization
 window.addEventListener('DOMContentLoaded', () => {
+    // Defeat browser autofill bugs for search bars
+    if (globalSearch) globalSearch.value = '';
+    if (convSearch) convSearch.value = '';
+    searchQuery = '';
+    
     initApp();
     setupEventListeners();
+    fetchAdminProfile();
+    connectAdminWebSocket();
 });
 
 function initApp() {
