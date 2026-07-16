@@ -228,6 +228,44 @@ def login(req: schemas.LoginRequest, response: Response, db: Session = Depends(g
     response.set_cookie(key="session_token", value=token, httponly=True, samesite="lax")
     return {"status": "success", "admin": {"name": admin.name, "role": admin.role}}
 
+@app.post("/signup")
+def signup(req: schemas.SignupRequest, response: Response, db: Session = Depends(get_db)):
+    existing_admin = db.query(models.Admin).filter(models.Admin.username == req.username).first()
+    if existing_admin:
+        raise HTTPException(status_code=400, detail="Username already registered")
+        
+    company = models.Company(
+        name=req.company_name,
+        created_at=datetime.datetime.utcnow().isoformat() + "Z"
+    )
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+    
+    token = secrets.token_hex(32)
+    admin = models.Admin(
+        company_id=company.id,
+        username=req.username,
+        password_hash=hash_password(req.password),
+        name=req.name,
+        role="Admin",
+        session_token=token
+    )
+    db.add(admin)
+    
+    settings = models.Settings(
+        company_id=company.id,
+        business_name=req.company_name,
+        business_description=f"We manufacture premium products for B2B wholesale.",
+        timezone="IST",
+        currency="INR"
+    )
+    db.add(settings)
+    db.commit()
+    
+    response.set_cookie(key="session_token", value=token, httponly=True, samesite="lax")
+    return {"status": "success", "admin": {"name": admin.name, "role": admin.role}}
+
 @app.post("/logout")
 def logout(request: Request, response: Response, db: Session = Depends(get_db)):
     token = request.cookies.get("session_token")
