@@ -48,9 +48,16 @@ const filterButtons = document.querySelectorAll('.filter-btn');
 // Startup & Initialization
 window.addEventListener('DOMContentLoaded', () => {
     // Defeat browser autofill bugs for search bars
-    if (globalSearch) globalSearch.value = '';
-    if (convSearch) convSearch.value = '';
-    searchQuery = '';
+    // Chrome autofills AFTER DOMContentLoaded, so we clear multiple times
+    function clearSearchBars() {
+        if (globalSearch) globalSearch.value = '';
+        if (convSearch) convSearch.value = '';
+        searchQuery = '';
+    }
+    clearSearchBars();
+    setTimeout(clearSearchBars, 100);
+    setTimeout(clearSearchBars, 500);
+    setTimeout(() => { clearSearchBars(); renderConversationsList(); }, 1000);
     
     initApp();
     setupEventListeners();
