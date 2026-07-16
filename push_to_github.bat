@@ -38,6 +38,10 @@ echo Committing...
 git commit -m "update: deployment push"
 
 echo.
+echo Renaming local branch to main...
+git branch -M main
+
+echo.
 echo Pushing to GitHub...
 git push -u origin main
 
@@ -46,7 +50,7 @@ if %errorlevel% neq 0 (
     echo =====================================================
     echo ERROR: Push failed. This usually happens if:
     echo 1. You haven't logged into GitHub on this computer.
-    echo 2. The repository URL is incorrect.
+    echo 2. The repository URL is incorrect. (Make sure it starts with https://github.com/)
     echo 3. The repository doesn't exist on GitHub.
     echo =====================================================
 ) else (
