@@ -155,10 +155,7 @@ class EmailIntegrationService:
             except Exception:
                 pass
 
-        body = body.strip()
-        if not body:
-            print(f"[Email] Skipping email with no text body from: {sender_email}")
-            return
+        body = body.strip() or "(No message body)"
 
         print(f"[Email] Processing email from: {sender_email} | Subject: {subject}")
         self._process_incoming_email(sender_email, sender_name or sender_email, subject, body)
