@@ -16,19 +16,35 @@ router = APIRouter(prefix="/integrations/website", tags=["Website Chat Integrati
 @router.post("/start_chat")
 def start_chat(req: StartChatRequest, db: Session = Depends(get_db)):
     # Create a new customer record for this visitor
+    company = db.query(models.Company).first()
+    if not company:
+        company = models.Company(name="Default Company")
+        db.add(company)
+        db.commit()
+
     customer = models.Customer(
+        company_id=company.id,
         name=req.name,
-        email=req.email,
-        lead_status="New",
-        lead_score=5
+        email=req.email
     )
     db.add(customer)
     db.commit()
     db.refresh(customer)
     
     # Create the conversation
+    # Create a Deal
+    deal = models.Deal(
+        company_id=company.id,
+        customer_id=customer.id,
+        stage="New Inquiry"
+    )
+    db.add(deal)
+    db.commit()
+    db.refresh(deal)
+
     conversation = models.Conversation(
         customer_id=customer.id,
+        deal_id=deal.id,
         channel="Website",
         status="New",
         unread=False

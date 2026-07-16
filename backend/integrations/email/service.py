@@ -166,13 +166,22 @@ class EmailIntegrationService:
     def _process_incoming_email(self, sender_email, sender_name, subject, body):
         db = SessionLocal()
         try:
-            # 1. Find or create Customer (no channel field on Customer model)
+            # Get or create default company
+            company = db.query(models.Company).first()
+            if not company:
+                company = models.Company(name="Default Company")
+                db.add(company)
+                db.commit()
+
+            # 1. Find or create Customer
             customer = db.query(models.Customer).filter(
-                models.Customer.email == sender_email
+                models.Customer.email == sender_email,
+                models.Customer.company_id == company.id
             ).first()
 
             if not customer:
                 customer = models.Customer(
+                    company_id=company.id,
                     name=sender_name,
                     email=sender_email,
                 )
@@ -188,8 +197,19 @@ class EmailIntegrationService:
             ).first()
 
             if not conversation:
+                # Create a deal first
+                deal = models.Deal(
+                    company_id=company.id,
+                    customer_id=customer.id,
+                    stage="New Inquiry"
+                )
+                db.add(deal)
+                db.commit()
+                db.refresh(deal)
+
                 conversation = models.Conversation(
                     customer_id=customer.id,
+                    deal_id=deal.id,
                     channel="Email",
                     status="Open",
                     is_ai_managed=True,
