@@ -1,0 +1,96 @@
+{
+  "hosting": {
+    "public": "frontend",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/login",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/logout",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/signup",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/forgot-password",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/admin/**",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/settings",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/team-members/**",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/team-members",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/customers/**",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/customers",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/messages/**",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "ai-sales-os-api",
+          "region": "us-central1"
+        }
+      }
+    ]
+  }
+}

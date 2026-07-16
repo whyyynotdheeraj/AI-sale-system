@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# Database - IMPORTANT: SQLite DB is excluded from git.
+# On Render Free, the DB resets on each deploy.
+# Use a free PostgreSQL DB (Neon/Supabase) for persistent data.
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.DS_Store
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs & temp files
+*.log
+fix_main.py
+alter_db.py
+verify_db.py
+test_api.py
+full_requirements.txt

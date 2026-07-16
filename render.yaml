@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: ai-sales-os
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: ""
+        # Leave blank to use SQLite (default). 
+        # For persistent storage, set this to a PostgreSQL URL from Neon or Supabase.
+      - key: SECRET_KEY
+        generateValue: true
+      - key: EMAIL_API_KEY
+        value: ""
+      - key: WHATSAPP_API_KEY
+        value: ""
+      - key: INSTAGRAM_API_KEY
+        value: ""
+      - key: FACEBOOK_API_KEY
+        value: ""

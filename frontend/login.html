@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AI Sales OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #312e81;
+            --surface: rgba(255, 255, 255, 0.05);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--surface-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 24px;
+            background: rgba(99, 102, 241, 0.2);
+            padding: 8px;
+            border-radius: 10px;
+        }
+
+        .tagline {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: white;
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, var(--primary), #818cf8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--primary);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            margin-top: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Check session loading state */
+        #page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient-start);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .main-content {
+            display: none; /* hidden until session checked */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="page-loader">
+        <div class="spinner" style="display: block; width: 40px; height: 40px; border-width: 4px;"></div>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <div class="login-container">
+            <div class="logo-area">
+                <div class="logo">
+                    <i class="fa-solid fa-bolt"></i>
+                    AI Sales OS
+                </div>
+                <div class="tagline">AI-Powered Sales Inbox</div>
+            </div>
+
+            <div class="error-message" id="error-message">
+                Invalid username or password
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="username" class="form-input" placeholder="admin" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="toggle-password" tabindex="-1">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    <span id="btn-text">Sign In</span>
+                    <div class="spinner" id="btn-spinner"></div>
+                </button>
+            </form>
+
+            <div class="footer" style="display: flex; flex-direction: column; gap: 8px;">
+                <div>Don't have an account? <a href="/signup.html" style="color: var(--primary); font-weight: 500; text-decoration: none;">Sign Up</a></div>
+                <div><a href="/forgot-password.html" style="color: var(--text-muted); text-decoration: none;">Forgot Password?</a></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/admin/profile');
+                if (res.ok) {
+                    // Already logged in
+                    window.location.href = '/dashboard.html';
+                } else {
+                    // Show login form
+                    document.getElementById('page-loader').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                }
+            } catch (err) {
+                // Show login form on network error
+                document.getElementById('page-loader').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+            }
+        });
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.innerHTML = type === 'password' ? '<i class="fa-regular fa-eye"></i>' : '<i class="fa-regular fa-eye-slash"></i>';
+        });
+
+        // Handle login submission
+        const loginForm = document.getElementById('login-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const errorMessage = document.getElementById('error-message');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = passwordInput.value;
+
+            // Loading state
+            submitBtn.disabled = true;
+            btnText.textContent = 'Signing in...';
+            btnSpinner.style.display = 'block';
+            errorMessage.style.display = 'none';
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    window.location.href = '/dashboard.html';
+                } else {
+                    const data = await response.json();
+                    errorMessage.textContent = data.detail || 'Invalid username or password';
+                    errorMessage.style.display = 'block';
+                    
+                    // Reset button
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Sign In';
+                    btnSpinner.style.display = 'none';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Connection error. Please try again.';
+                errorMessage.style.display = 'block';
+                
+                // Reset button
+                submitBtn.disabled = false;
+                btnText.textContent = 'Sign In';
+                btnSpinner.style.display = 'none';
+            }
+        });
+    </script>
+
+    <script>
+        fetch('/api/branding').then(r=>r.json()).then(d=>{
+            document.querySelectorAll('.logo-text').forEach(el=>el.textContent=d.company_name||'AI Sales OS');
+            if(d.business_logo){
+                document.querySelectorAll('.logo-icon').forEach(el=>el.innerHTML='<img src="'+d.business_logo+'" style="width:24px;height:24px;object-fit:contain;">');
+            }
+        }).catch(e=>console.error('Branding load error:', e));
+    </script>
+</body>
+
+</html>

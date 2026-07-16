@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+.git
+.gitignore
+cloudflared.exe
+ai_sales_os.db
+*.md
+alter_db.py
+verify_db.py
+test_api.py
+render.yaml
+firebase.json
+.firebaserc
+.firebase/

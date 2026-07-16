@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sales OS - Automate Your Sales Funnel</title>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #1e293b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-weight: 500;
+            color: var(--text-main);
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn-login {
+            font-weight: 600;
+        }
+
+        .btn-signup {
+            background: var(--primary);
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-signup:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 0 60px;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-cta {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .btn-primary-lg {
+            background: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-lg:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 10px 20px -10px var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary-lg {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary-lg:hover {
+            background: #f1f5f9;
+        }
+
+        .hero-image {
+            margin-top: 60px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            background: var(--secondary);
+            padding-top: 20px;
+        }
+
+        .hero-image img {
+            width: 100%;
+            display: block;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 0;
+            background: white;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: var(--bg-body);
+            padding: 32px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 24px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+        }
+
+        /* About Section */
+        .about {
+            padding: 100px 0;
+            background: var(--bg-body);
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .about-text p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .about-image {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+        }
+
+        .about-image i {
+            font-size: 120px;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        /* Contact Section */
+        .contact {
+            padding: 100px 0;
+            background: white;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-body);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--secondary);
+            color: white;
+            padding: 60px 0 20px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand p {
+            color: #94a3b8;
+            margin-top: 16px;
+        }
+
+        .footer-links h4 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero-cta { flex-direction: column; }
+            .about-content { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="container">
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fa-solid fa-bolt"></i>
+                AI Sales OS
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+                <a href="/login.html" class="btn-login">Sign In</a>
+                <a href="/signup.html" class="btn-signup">Get Started</a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero container">
+        <h1>Automate Your Sales with <span>Cognitive AI</span></h1>
+        <p>The first unified inbox that manages your customers, scores your leads, and autonomously answers questions across every channel.</p>
+        <div class="hero-cta">
+            <a href="/signup.html" class="btn-primary-lg">Start Free Trial</a>
+            <a href="#features" class="btn-secondary-lg">See How It Works</a>
+        </div>
+        <div class="hero-image">
+            <!-- Simulated dashboard screenshot placeholder -->
+            <div style="display: flex; gap: 8px; padding: 0 20px 20px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
+            </div>
+            <div style="height: 400px; background: white; border-radius: 8px 8px 0 0; margin: 0 20px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: var(--border);">
+                <i class="fa-solid fa-table-columns" style="font-size: 80px;"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything you need to close deals</h2>
+                <p>Powerful features designed for modern sales teams who want to scale their operations without scaling headcount.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-robot"></i></div>
+                    <h3>AI Auto-Responder</h3>
+                    <p>Our intelligent agent learns your business and answers customer inquiries 24/7, capturing leads while you sleep.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-inbox"></i></div>
+                    <h3>Unified Inbox</h3>
+                    <p>Manage conversations from your Website, WhatsApp, Instagram, and Email all in one beautiful interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-bullseye"></i></div>
+                    <h3>Smart Lead Scoring</h3>
+                    <p>Automatically grade leads based on intent, budget, and profile completeness so your team focuses on hot prospects.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <h3>Advanced Analytics</h3>
+                    <p>Track response times, conversion rates, and team performance with real-time dashboards and reports.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-users-gear"></i></div>
+                    <h3>Team Collaboration</h3>
+                    <p>Assign conversations, leave internal notes, and seamlessly hand off chats from AI to human agents.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3>Enterprise Security</h3>
+                    <p>Bank-grade encryption, role-based access control, and complete data privacy for your peace of mind.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container about-content">
+            <div class="about-text">
+                <h2>Our Mission</h2>
+                <p>At AI Sales OS, we believe that businesses shouldn't have to choose between providing excellent customer service and maintaining lean operations.</p>
+                <p>We built this platform to empower sales teams with cognitive AI, stripping away the repetitive tasks of lead qualification and initial outreach.</p>
+                <p>Our vision is a future where software handles the busywork, allowing humans to focus entirely on building relationships and closing complex deals.</p>
+            </div>
+            <div class="about-image">
+                <i class="fa-solid fa-globe"></i>
+                <h3 style="margin-top: 24px; color: var(--secondary);">Built for global teams</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Get in touch</h2>
+                <p>Have questions about enterprise plans or custom integrations? Our team is here to help.</p>
+            </div>
+            <div class="contact-form">
+                <form onsubmit="event.preventDefault(); alert('Message sent successfully!');">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Work Email</label>
+                        <input type="email" placeholder="jane@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea placeholder="How can we help you?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <i class="fa-solid fa-bolt"></i>
+                        AI Sales OS
+                    </div>
+                    <p>The cognitive sales platform for modern, high-growth businesses.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="#">Changelog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 AI Sales OS. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        fetch('/api/branding').then(r=>r.json()).then(d=>{
+            document.querySelectorAll('.logo-text').forEach(el=>el.textContent=d.company_name||'AI Sales OS');
+            if(d.business_logo){
+                document.querySelectorAll('.logo-icon').forEach(el=>el.innerHTML='<img src="'+d.business_logo+'" style="width:24px;height:24px;object-fit:contain;">');
+            }
+        }).catch(e=>console.error('Branding load error:', e));
+    </script>
+    
+    <!-- Live Chat Widget UI -->
+    <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: 'Inter', sans-serif;">
+        <!-- Chat Bubble Button -->
+        <button id="chat-bubble" style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: transform 0.2s;">
+            <i class="fa-solid fa-message"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" style="display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); flex-direction: column; overflow: hidden; position: absolute; bottom: 80px; right: 0;">
+            <!-- Header -->
+            <div style="background: var(--primary); color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 600;">Chat with us</div>
+                <button id="chat-close" style="background: none; border: none; color: white; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <!-- Start Chat Form -->
+            <div id="chat-start-form" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Please enter your details to start chatting.</p>
+                <input type="text" id="chat-name" placeholder="Your Name" style="padding: 10px; border: 1px solid var(--border); border-radius: 6px;" required>
+                <input type="email" id="chat-email" placeholder="Your Email" style="padding: 10px; border: 1px solid var(--border); border-radius: 6px;" required>
+                <button id="start-chat-btn" style="background: var(--primary); color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Start Chat</button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chat-messages-area" style="display: none; flex: 1; flex-direction: column;">
+                <div id="chat-messages" style="flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #f8fafc;">
+                    <div style="align-self: flex-start; background: #e2e8f0; padding: 10px 14px; border-radius: 12px 12px 12px 0; max-width: 80%; font-size: 0.9rem;">
+                        Hello! How can we help you today?
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div style="padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+                    <input type="text" id="chat-msg-input" placeholder="Type a message..." style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; outline: none;">
+                    <button id="chat-send-btn" style="background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Chat Logic -->
+    <script>
+        const chatBubble = document.getElementById('chat-bubble');
+        const chatWindow = document.getElementById('chat-window');
+        const chatClose = document.getElementById('chat-close');
+        const startChatBtn = document.getElementById('start-chat-btn');
+        const chatStartForm = document.getElementById('chat-start-form');
+        const chatMessagesArea = document.getElementById('chat-messages-area');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatMsgInput = document.getElementById('chat-msg-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        
+        let ws = null;
+        let customerId = null;
+
+        chatBubble.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'none' || chatWindow.style.display === '' ? 'flex' : 'none';
+        });
+
+        chatClose.addEventListener('click', () => {
+            chatWindow.style.display = 'none';
+        });
+
+        startChatBtn.addEventListener('click', async () => {
+            const name = document.getElementById('chat-name').value;
+            const email = document.getElementById('chat-email').value;
+            if(!name || !email) return alert("Please enter name and email");
+            
+            startChatBtn.textContent = 'Connecting...';
+            
+            try {
+                const res = await fetch('/integrations/website/start_chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, email})
+                });
+                const data = await res.json();
+                customerId = data.customer_id;
+                
+                chatStartForm.style.display = 'none';
+                chatMessagesArea.style.display = 'flex';
+                
+                connectWebSocket();
+            } catch (e) {
+                console.error(e);
+                alert("Failed to start chat");
+                startChatBtn.textContent = 'Start Chat';
+            }
+        });
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/integrations/website/ws/${customerId}`);
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if(data.type === 'new_message') {
+                    appendMessage(data.message.text, 'system');
+                }
+            };
+        }
+
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.padding = '10px 14px';
+            div.style.maxWidth = '80%';
+            div.style.fontSize = '0.9rem';
+            if(sender === 'user') {
+                div.style.alignSelf = 'flex-end';
+                div.style.background = 'var(--primary)';
+                div.style.color = 'white';
+                div.style.borderRadius = '12px 12px 0 12px';
+            } else {
+                div.style.alignSelf = 'flex-start';
+                div.style.background = '#e2e8f0';
+                div.style.color = '#0f172a';
+                div.style.borderRadius = '12px 12px 12px 0';
+            }
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            if(!ws || ws.readyState !== WebSocket.OPEN) return;
+            const text = chatMsgInput.value.trim();
+            if(!text) return;
+            
+            ws.send(JSON.stringify({text}));
+            appendMessage(text, 'user');
+            chatMsgInput.value = '';
+        }
+
+        chatSendBtn.addEventListener('click', sendMessage);
+        chatMsgInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+
+</html>

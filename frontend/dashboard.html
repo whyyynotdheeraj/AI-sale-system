@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sales OS - Inbox</title>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="logo-text">AI Sales OS</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <div class="menu-section">
+                    <span class="section-title">Menu</span>
+                    <a href="#" class="menu-item active" id="menu-inbox">
+                        <i class="fa-solid fa-inbox"></i>
+                        <span>Inbox</span>
+                        <span class="badge" id="sidebar-unread-count">0</span>
+                    </a>
+                    <a href="#" class="menu-item" id="menu-customers">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Customers</span>
+                    </a>
+                    <a href="#" class="menu-item" id="menu-analytics">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="#" class="menu-item" id="menu-followups">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span>Follow Ups</span>
+                    </a>
+                    <a href="#" class="menu-item" id="menu-products">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Products</span>
+                    </a>
+                </div>
+
+                <div class="menu-section">
+                    <span class="section-title">Channels</span>
+                    <a href="#" class="menu-item active-channel">
+                        <i class="fa-solid fa-comments text-website"></i>
+                        <span>Website Chat</span>
+                    </a>
+                    <a href="#" class="menu-item disabled-channel">
+                        <i class="fa-brands fa-whatsapp text-whatsapp"></i>
+                        <span>WhatsApp</span>
+                        <span class="coming-soon">Soon</span>
+                    </a>
+                    <a href="#" class="menu-item disabled-channel">
+                        <i class="fa-brands fa-instagram text-instagram"></i>
+                        <span>Instagram</span>
+                        <span class="coming-soon">Soon</span>
+                    </a>
+                    <a href="#" class="menu-item disabled-channel">
+                        <i class="fa-solid fa-envelope text-email"></i>
+                        <span>Email</span>
+                        <span class="coming-soon">Soon</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="menu-item" id="menu-settings">
+                    <i class="fa-solid fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" class="menu-item logout" id="menu-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div class="main-content">
+            <!-- TOP NAVBAR -->
+            <header class="navbar">
+                <div class="navbar-left">
+                    <h1 class="navbar-title" id="page-title">Inbox</h1>
+                    <div class="search-bar">
+                        <i class="fa-solid fa-search search-icon"></i>
+                        <input type="text" id="global-search" placeholder="Search across conversations...">
+                    </div>
+                </div>
+                <div class="navbar-right">
+                    <div class="ai-status">
+                        <span class="status-indicator active"></span>
+                        <span class="status-text" id="ai-status-label">AI Agent: Active</span>
+                    </div>
+                    <div class="nav-icon-btn">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </div>
+                    <div class="user-profile" id="user-profile-btn" style="cursor: pointer;">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="User Profile" class="avatar" id="navbar-avatar">
+                        <div class="user-info">
+                            <span class="username" id="navbar-username">Sarah Connor</span>
+                            <span class="role" id="navbar-role">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- THREE COLUMN CHAT VIEW -->
+            <div class="dashboard-grid">
+                <!-- COLUMN 1: CONVERSATION LIST (LEFT PANEL) -->
+                <section class="panel-left">
+                    <div class="panel-left-header">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="conv-search" placeholder="Search inbox...">
+                        </div>
+                        <div class="filters-container">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="unread">Unread</button>
+                            <button class="filter-btn" data-filter="hot">Hot</button>
+                            <button class="filter-btn" data-filter="warm">Warm</button>
+                            <button class="filter-btn" data-filter="cold">Cold</button>
+                            <button class="filter-btn" data-filter="ai">AI</button>
+                            <button class="filter-btn" data-filter="human">Human</button>
+                        </div>
+                    </div>
+                    <div class="conversation-list" id="conversations-container">
+                        <!-- Cards loaded dynamically via JS -->
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <span>Loading conversations...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COLUMN 2: CHAT WINDOW (CENTER PANEL) -->
+                <section class="panel-center">
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <div class="chat-header-info">
+                            <h2 class="chat-customer-name" id="chat-customer-title">Jane Cooper</h2>
+                            <span class="chat-customer-company" id="chat-customer-subtitle">Acme Corp</span>
+                        </div>
+                        <div class="chat-header-actions">
+                            <!-- Toggle Mode -->
+                            <div class="mode-toggle-container">
+                                <span class="mode-label">Demo Simulation</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="simulation-mode-checkbox" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="mode-desc" id="mode-desc-text">Test AI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Body / Messages -->
+                    <div class="chat-messages" id="chat-messages-container">
+                        <!-- Messages loaded dynamically -->
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-bubble">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <span class="typing-text">AI is thinking...</span>
+                    </div>
+
+                    <!-- Chat Footer / Input area -->
+                    <form class="chat-input-area" id="chat-form">
+                        <div class="input-actions-left">
+                            <button type="button" class="action-btn" title="Add attachment"><i class="fa-solid fa-paperclip"></i></button>
+                            <button type="button" class="action-btn" title="Insert Emoji"><i class="fa-regular fa-face-smile"></i></button>
+                        </div>
+                        <input type="text" id="chat-input" placeholder="Type a message to simulate customer..." autocomplete="off">
+                        <div class="input-actions-right">
+                            <button type="button" class="action-btn" title="Voice Input"><i class="fa-solid fa-microphone"></i></button>
+                            <button type="submit" class="send-btn" id="send-button">
+                                <span class="send-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- COLUMN 3: CUSTOMER DETAILS (RIGHT PANEL) -->
+                <section class="panel-right">
+                    <!-- Profile Card -->
+                    <div class="profile-card">
+                        <div class="profile-avatar" id="details-avatar-letter">J</div>
+                        <h3 class="profile-name" id="details-name">Jane Cooper</h3>
+                        <p class="profile-company" id="details-company">Acme Corp</p>
+                        <div class="lead-badges">
+                            <span class="badge-status" id="details-status">New</span>
+                            <span class="badge-score" id="details-score">Score: 10</span>
+                        </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="details-section">
+                        <h4 class="details-section-title">Customer Details</h4>
+                        <div class="detail-row">
+                            <span class="detail-label">Phone</span>
+                            <span class="detail-val" id="details-phone">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-val" id="details-email">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">City</span>
+                            <span class="detail-val" id="details-city">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Platform</span>
+                            <span class="detail-val" id="details-platform">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Lead Details Section -->
+                    <div class="details-section">
+                        <h4 class="details-section-title">Interested Product</h4>
+                        <div class="detail-row">
+                            <span class="detail-label">Product</span>
+                            <span class="detail-val font-semibold" id="details-product">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Quantity</span>
+                            <span class="detail-val" id="details-quantity">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Budget</span>
+                            <span class="detail-val text-green" id="details-budget">-</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Summary -->
+                    <div class="details-section">
+                        <h4 class="details-section-title"><i class="fa-solid fa-wand-magic-sparkles text-spark"></i> AI Summary</h4>
+                        <div class="ai-summary-box" id="details-summary">
+                            Conversation has not started yet.
+                        </div>
+                    </div>
+
+                    <!-- Internal Notes -->
+                    <div class="details-section">
+                        <h4 class="details-section-title">Internal Notes</h4>
+                        <textarea class="notes-textarea" id="details-notes" placeholder="Write internal notes about this customer..."></textarea>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="details-section">
+                        <h4 class="details-section-title">Quick Actions</h4>
+                        <div class="quick-actions-grid">
+                            <button class="action-btn-secondary" id="action-catalogue">
+                                <i class="fa-solid fa-images"></i> Share Catalogue
+                            </button>
+                            <button class="action-btn-secondary" id="action-quotation">
+                                <i class="fa-solid fa-file-invoice-dollar"></i> Send Quotation
+                            </button>
+                            <button class="action-btn-secondary" id="action-followup">
+                                <i class="fa-solid fa-clock"></i> Send Follow-up
+                            </button>
+                            <button class="action-btn-secondary" id="action-assign">
+                                <i class="fa-solid fa-user-tie"></i> Assign Executive
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Actions -->
+                    <div class="details-section" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <button class="action-btn-danger" id="action-delete-customer">
+                            <i class="fa-solid fa-trash-can"></i> Delete Customer Profile
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- SETTINGS PAGE (HIDDEN BY DEFAULT) -->
+            <div id="settings-page" style="display: none;">
+                <div class="settings-header">
+                    <button class="action-btn-secondary" id="settings-back-btn" style="margin-right: 16px;">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="settings-title">Settings</h2>
+                </div>
+
+                <div class="settings-tabs">
+                    <div class="settings-tab active" data-target="settings-general">General</div>
+                    <div class="settings-tab" data-target="settings-ai">AI Settings</div>
+                    <div class="settings-tab" data-target="settings-notifications">Notifications</div>
+                    <div class="settings-tab" data-target="settings-appearance">Appearance</div>
+                    <div class="settings-tab" data-target="settings-security">Security</div>
+                    <div class="settings-tab" data-target="settings-team">Team</div>
+                </div>
+
+                <div class="settings-content-scroll">
+                    <!-- General Settings -->
+                    <div class="settings-content active" id="settings-general">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Business Information</h3>
+                            <div class="form-group" style="text-align: center; margin-bottom: 24px;">
+                                <div style="margin: 0 auto 12px; width: 100px; height: 100px; border-radius: 8px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc;" id="business-logo-preview">
+                                    <i class="fa-solid fa-building" style="font-size: 32px; color: var(--text-muted);" id="business-logo-icon"></i>
+                                    <img id="business-logo-img" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                                <label for="upload-business-logo" class="btn-secondary btn-sm" style="cursor: pointer; display: inline-block;">Upload Logo</label>
+                                <input type="file" id="upload-business-logo" accept="image/png, image/jpeg" style="display: none;">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-input" id="setting-company" placeholder="e.g. AI Sales OS">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Name (Trading As)</label>
+                                <input type="text" class="form-input" id="setting-business" placeholder="e.g. AI Sales OS Ltd">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Description</label>
+                                <textarea class="form-textarea" id="setting-business-description" rows="3" placeholder="Describe your business..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Address</label>
+                                <textarea class="form-textarea" id="setting-business-address" rows="2" placeholder="Full business address..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Phone</label>
+                                <input type="text" class="form-input" id="setting-business-phone" placeholder="e.g. +1 (555) 000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Email</label>
+                                <input type="email" class="form-input" id="setting-business-email" placeholder="e.g. contact@company.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Website URL</label>
+                                <input type="url" class="form-input" id="setting-website-url" placeholder="https://www.company.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Social Media Links (Comma separated URLs)</label>
+                                <textarea class="form-textarea" id="setting-social-media" rows="2" placeholder="https://twitter.com/..., https://linkedin.com/..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Working Hours</label>
+                                <input type="text" class="form-input" id="setting-working-hours" placeholder="e.g. Mon-Fri, 9:00 AM - 5:00 PM">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Timezone</label>
+                                <select class="form-select" id="setting-timezone">
+                                    <option value="UTC">UTC</option>
+                                    <option value="EST">EST</option>
+                                    <option value="CST">CST</option>
+                                    <option value="MST">MST</option>
+                                    <option value="PST">PST</option>
+                                    <option value="IST">IST</option>
+                                    <option value="CET">CET</option>
+                                    <option value="JST">JST</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Language</label>
+                                <select class="form-select" id="setting-language">
+                                    <option value="English">English</option>
+                                    <option value="Spanish">Spanish</option>
+                                    <option value="French">French</option>
+                                    <option value="German">German</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select class="form-select" id="setting-currency">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="INR">INR (₹)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary" id="save-settings-general">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <!-- AI Settings -->
+                    <div class="settings-content" id="settings-ai">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">AI Agent Configuration</h3>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Enable AI Auto-Responder</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-ai-enabled" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Greeting Message</label>
+                                <textarea class="form-textarea" id="setting-ai-greeting" rows="3">Hello! Thank you for contacting us. How can I help you today?</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">AI Reply Delay (Seconds)</label>
+                                <input type="number" class="form-input" id="setting-ai-delay" min="0" max="60" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Maximum Follow-ups before Human Handoff</label>
+                                <input type="number" class="form-input" id="setting-ai-max-followups" min="1" max="10" value="3">
+                            </div>
+                            <button class="btn-primary" id="save-settings-ai">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Settings -->
+                    <div class="settings-content" id="settings-notifications">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Notification Preferences</h3>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Desktop Notifications</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-notify-desktop" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Email Notifications (Daily Digest)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-notify-email">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Sound Notifications (New Message)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-notify-sound" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Unread Message Alerts (Sidebar)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-notify-alerts" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <button class="btn-primary" id="save-settings-notifications">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <!-- Appearance Settings -->
+                    <div class="settings-content" id="settings-appearance">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Theme</h3>
+                            <div class="theme-cards">
+                                <div class="theme-card active" data-theme="light">
+                                    <i class="fa-regular fa-sun" style="font-size: 24px; margin-bottom: 8px;"></i>
+                                    <div>Light</div>
+                                </div>
+                                <div class="theme-card" data-theme="dark">
+                                    <i class="fa-regular fa-moon" style="font-size: 24px; margin-bottom: 8px;"></i>
+                                    <div>Dark</div>
+                                </div>
+                                <div class="theme-card" data-theme="system">
+                                    <i class="fa-solid fa-desktop" style="font-size: 24px; margin-bottom: 8px;"></i>
+                                    <div>System</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Primary Color</h3>
+                            <div class="color-swatches" id="color-swatches-container">
+                                <div class="color-swatch active" style="background-color: #6366f1;" data-color="#6366f1"></div>
+                                <div class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6"></div>
+                                <div class="color-swatch" style="background-color: #10b981;" data-color="#10b981"></div>
+                                <div class="color-swatch" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
+                                <div class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444"></div>
+                                <div class="color-swatch" style="background-color: #d946ef;" data-color="#d946ef"></div>
+                                <input type="color" id="custom-color-picker" class="custom-color-input" title="Choose Custom Color" value="#6366f1">
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Font Size</h3>
+                            <div class="form-group" style="flex-direction: row; gap: 20px;">
+                                <label><input type="radio" name="font_size" value="small"> Small</label>
+                                <label><input type="radio" name="font_size" value="medium" checked> Medium</label>
+                                <label><input type="radio" name="font_size" value="large"> Large</label>
+                            </div>
+                        </div>
+                        <div class="settings-section" style="background: transparent; box-shadow: none; padding: 0;">
+                            <button class="btn-primary" id="save-settings-appearance">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="settings-content" id="settings-security">
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Change Username & Password</h3>
+                            <div class="form-group">
+                                <label class="form-label">New Username</label>
+                                <input type="text" class="form-input" id="setting-security-username" placeholder="Leave blank to keep current">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Password</label>
+                                <input type="password" class="form-input" id="setting-security-password" placeholder="Leave blank to keep current">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-input" id="setting-security-password-confirm" placeholder="Confirm password">
+                            </div>
+                            <button class="btn-primary" id="save-settings-security">Update Credentials</button>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Two-Factor Authentication</h3>
+                            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                                <label class="form-label" style="margin: 0;">Enable 2FA (Authenticator App)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-2fa-enabled" disabled>
+                                    <span class="slider round" style="opacity: 0.5;"></span>
+                                </label>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-light); margin-top: 8px;">Coming soon in a future update.</p>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Active Sessions</h3>
+                            <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 500; margin-bottom: 4px;">Current Browser Session</div>
+                                        <div style="font-size: 13px; color: var(--text-light);">Active now</div>
+                                    </div>
+                                    <span class="badge-status" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Active</span>
+                                </div>
+                            </div>
+                            <button class="btn-danger" id="logout-all-devices"><i class="fa-solid fa-right-from-bracket"></i> Logout All Devices</button>
+                        </div>
+                    </div>
+
+                    <!-- Team Settings -->
+                    <div class="settings-content" id="settings-team">
+                        <div class="settings-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 class="settings-section-title" style="margin: 0;">Team Members</h3>
+                                <button class="btn-primary btn-sm" id="btn-add-team-member"><i class="fa-solid fa-plus"></i> Add Member</button>
+                            </div>
+                            
+                            <table class="team-table" id="team-members-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="team-members-tbody">
+                                    <!-- Populated dynamically -->
+                                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Loading team members...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS PAGE -->
+            <div id="analytics-page" style="display: none; flex-direction: column; gap: 24px; padding: 24px; overflow-y: auto; height: calc(100vh - 72px);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <button class="btn-icon" id="analytics-back-btn" title="Back to Inbox"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 style="font-size: 22px; font-weight: 700; color: var(--text-main); margin: 0;">Analytics Dashboard</h2>
+                    <button class="btn-secondary btn-sm" id="analytics-refresh-btn" style="margin-left: auto;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+                </div>
+                <div class="analytics-kpi-row">
+                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-customers">0</span><span class="kpi-label">Total Leads</span></div></div>
+                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(16,185,129,0.1); color: #10b981;"><i class="fa-solid fa-dollar-sign"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-pipeline">$0</span><span class="kpi-label">Total Pipeline</span></div></div>
+                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;"><i class="fa-solid fa-comments"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-messages">0</span><span class="kpi-label">Total Messages</span></div></div>
+                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-avg-score">0</span><span class="kpi-label">Avg Lead Score</span></div></div>
+                </div>
+                <div class="analytics-charts-row">
+                    <div class="analytics-chart-card"><h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Lead Distribution</h3><div class="chart-body" id="chart-lead-distribution"></div></div>
+                    <div class="analytics-chart-card"><h3 class="chart-title"><i class="fa-solid fa-robot"></i> AI vs Human Managed</h3><div class="chart-body" id="chart-ai-vs-human"></div></div>
+                    <div class="analytics-chart-card"><h3 class="chart-title"><i class="fa-solid fa-envelope"></i> Message Breakdown</h3><div class="chart-body" id="chart-message-breakdown"></div></div>
+                </div>
+                <div class="analytics-charts-row">
+                    <div class="analytics-chart-card" style="flex: 2;"><h3 class="chart-title"><i class="fa-solid fa-filter"></i> Conversion Funnel</h3><div class="chart-body" id="chart-funnel"></div></div>
+                    <div class="analytics-chart-card" style="flex: 1;"><h3 class="chart-title"><i class="fa-solid fa-fire"></i> Pipeline by Status</h3><div class="pipeline-cards" id="pipeline-cards"></div></div>
+                </div>
+                <div class="analytics-charts-row">
+                    <div class="analytics-chart-card" style="flex: 1;"><h3 class="chart-title"><i class="fa-solid fa-ranking-star"></i> Top Customers</h3><div class="chart-body" id="chart-top-customers" style="padding: 0;"></div></div>
+                    <div class="analytics-chart-card" style="flex: 1;"><h3 class="chart-title"><i class="fa-solid fa-box-open"></i> Product Interest</h3><div class="chart-body" id="chart-products"></div></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Notification Container for Toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- MODALS -->
+    
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="font-size: 18px; font-weight: 600;">Admin Profile</h3>
+                <button class="modal-close" id="profile-modal-close"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 600; margin: 0 auto 12px; overflow: hidden; position: relative;" id="profile-modal-avatar-container">
+                        <span id="profile-modal-avatar-initial">A</span>
+                        <img id="profile-modal-avatar-img" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
+                    </div>
+                    <label for="upload-profile-photo" class="btn-secondary btn-sm" style="cursor: pointer; display: inline-block;">Change Photo</label>
+                    <input type="file" id="upload-profile-photo" accept="image/png, image/jpeg" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="profile-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="profile-email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" class="form-input" id="profile-phone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" class="form-input" id="profile-company">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Business Address</label>
+                    <input type="text" class="form-input" id="profile-address">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Change Password (Optional)</label>
+                    <input type="password" class="form-input" id="profile-password" placeholder="Leave blank to keep current password">
+                </div>
+                <button class="btn-primary" id="save-profile-btn" style="width: 100%; margin-top: 10px;">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Member Modal -->
+    <div class="modal-overlay" id="team-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="font-size: 18px; font-weight: 600;" id="team-modal-title">Add Team Member</h3>
+                <button class="modal-close" id="team-modal-close"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="team-member-id">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="team-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="team-email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" class="form-input" id="team-phone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" id="team-role">
+                        <option value="Admin">Admin</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Sales Executive" selected>Sales Executive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="team-status">
+                        <option value="Active" selected>Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="save-team-btn" style="width: 100%; margin-top: 10px;">Save Member</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow-up Modal -->
+    <div class="modal-overlay" id="followup-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="font-size: 18px; font-weight: 600;">Send Follow-up Message</h3>
+                <button class="modal-close" id="followup-modal-close"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Review and edit the follow-up message before sending it to the customer.</p>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-input" id="followup-message-text" rows="5" style="width: 100%; resize: vertical; padding: 12px;"></textarea>
+                </div>
+                <button class="btn-primary" id="send-followup-btn" style="width: 100%; margin-top: 10px;">
+                    <i class="fa-solid fa-paper-plane"></i> Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
