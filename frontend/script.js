@@ -6,6 +6,7 @@
 let customers = [];
 let selectedCustomerId = null;
 let currentFilter = 'all';
+let currentChannelFilter = 'all';
 let searchQuery = '';
 
 // DOM Elements
@@ -99,6 +100,22 @@ function setupEventListeners() {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentFilter = btn.dataset.filter;
+            renderConversationsList();
+        });
+    });
+
+    // Channel Filters (Sidebar)
+    const channelItems = document.querySelectorAll('.channel-item');
+    channelItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            channelItems.forEach(i => i.classList.remove('active-channel'));
+            item.classList.add('active-channel');
+            currentChannelFilter = item.dataset.channel;
+            
+            // Auto close mobile sidebar
+            document.querySelector('.sidebar').classList.remove('active');
+            
             renderConversationsList();
         });
     });
@@ -409,6 +426,11 @@ function renderConversationsList() {
                              (cust.last_message_text && cust.last_message_text.toLowerCase().includes(searchQuery));
         
         if (!matchesSearch) return false;
+
+        // Channel Filter
+        if (currentChannelFilter !== 'all' && cust.channel !== currentChannelFilter) {
+            return false;
+        }
 
         // Filters: All, Unread, Hot, Warm, Cold, AI, Human
         if (currentFilter === 'unread') return cust.unread;

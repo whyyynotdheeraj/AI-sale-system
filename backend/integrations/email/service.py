@@ -120,6 +120,21 @@ class EmailIntegrationService:
             print(f"[Email] Skipping email from self: {sender_email}")
             return
 
+        # Skip automated, spam, and marketing emails
+        ignore_keywords = [
+            "no-reply", "noreply", "newsletter", "marketing", "updates", 
+            "notifications", "do-not-reply", "mailer-daemon", "bounce"
+        ]
+        ignore_domains = [
+            "youtube.com", "google.com", "facebookmail.com", "twitter.com", 
+            "linkedin.com", "instagram.com", "github.com", "render.com"
+        ]
+        
+        email_lower = sender_email.lower()
+        if any(kw in email_lower for kw in ignore_keywords) or any(email_lower.endswith(domain) for domain in ignore_domains):
+            print(f"[Email] Skipping automated/notification email from: {sender_email}")
+            return
+
         # --- Body ---
         body = ""
         if msg.is_multipart():
