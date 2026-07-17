@@ -575,8 +575,9 @@ function appendMessage(msg) {
     let draftActions = '';
     if (isDraft) {
         draftActions = `
-        <div style="margin-top:10px; display:flex; gap:8px;">
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
             <button onclick="approveDraft(${msg.id})" style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-check"></i> Approve & Send</button>
+            <button onclick="regenerateDraft(${msg.id}, this)" style="background:#6366f1; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-arrows-rotate"></i> Regenerate</button>
             <button onclick="discardDraft(${msg.id})" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-trash"></i> Discard</button>
         </div>`;
     }
@@ -600,19 +601,42 @@ function appendMessage(msg) {
 async function approveDraft(msgId) {
     try {
         const res = await fetch(`/messages/${msgId}/approve`, {
-            method: 'POST',
-            headers: {'Authorization': `Bearer ${sessionToken}`}
+            method: 'POST'
         });
         if (res.ok) loadConversation(currentConversationId);
         else alert("Failed to approve draft");
     } catch (e) { console.error(e); }
 }
 
+async function regenerateDraft(msgId, btnEl) {
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Regenerating...';
+    }
+    try {
+        const res = await fetch(`/messages/${msgId}/regenerate`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            loadConversation(currentConversationId);
+            showToast("Draft regenerated successfully!", "success");
+        } else {
+            alert("Failed to regenerate draft");
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Regenerate';
+        }
+    }
+}
+
 async function discardDraft(msgId) {
     try {
         const res = await fetch(`/messages/${msgId}/discard`, {
-            method: 'POST',
-            headers: {'Authorization': `Bearer ${sessionToken}`}
+            method: 'POST'
         });
         if (res.ok) loadConversation(currentConversationId);
         else alert("Failed to discard draft");

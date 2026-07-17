@@ -134,13 +134,15 @@
             <div class="dashboard-grid">
                 <!-- COLUMN 1: CONVERSATION LIST (LEFT PANEL) -->
                 <section class="panel-left">
-                    <div class="panel-left-header">
-                        <div class="search-box">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="search" id="conv-search" placeholder="Search inbox..." autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+                    <div class="panel-left-header" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                            <div class="search-box" style="flex: 1; position: relative;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" id="conv-search" placeholder="Search inbox..." autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+                            </div>
+                            <button class="btn-icon" id="inbox-refresh-btn" title="Refresh Emails" style="color: var(--text-light); height: 32px; width: 32px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--panel-bg); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="fa-solid fa-arrows-rotate"></i></button>
                         </div>
-                        <div class="filters-container">
-                            <button class="btn-icon" id="inbox-refresh-btn" title="Refresh Emails" style="color: var(--text-light); margin-right: 8px;"><i class="fa-solid fa-arrows-rotate"></i></button>
+                        <div class="filters-container" style="display: flex; gap: 6px; flex-wrap: wrap;">
                             <button class="filter-btn active" data-filter="all">All</button>
                             <button class="filter-btn" data-filter="unread">Unread</button>
                             <button class="filter-btn" data-filter="hot">Hot</button>

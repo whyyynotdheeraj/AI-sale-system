@@ -523,11 +523,109 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
     conv.last_message_text = msg_in.text
     conv.last_message_time = msg_in.timestamp
     conv.unread = False
+    
+    ai_reply_to_return = None
+
     if msg_in.sender == "human":
         conv.is_ai_managed = False
+        if conv.channel == "Email" and not msg_in.simulation_mode:
+            subject = "Re: Inquiry"
+            if conv.deal and conv.deal.interested_product:
+                subject = f"Re: {conv.deal.interested_product}"
+            success = email_service.send_email(db, admin.company_id, customer.email, subject, msg_in.text)
+            if not success:
+                logger.error(f"[Email] Failed to send manual reply to {customer.email}")
+    elif msg_in.sender == "customer" and conv.is_ai_managed:
+        settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+        if settings and settings.ai_enabled:
+            from .ai_service import generate_sales_reply
+            reply_text = generate_sales_reply(settings, customer, conv, msg_in.text)
+            iso_time = datetime.datetime.utcnow().isoformat() + "Z"
+            
+            if settings.ai_auto_send:
+                # Option A: Auto-send / auto-save as AI reply
+                ai_msg = models.Message(
+                    conversation_id=conv.id,
+                    sender="ai",
+                    text=reply_text,
+                    timestamp=iso_time
+                )
+                db.add(ai_msg)
+                conv.status = "Replied"
+                conv.last_message_text = reply_text
+                conv.last_message_time = iso_time
+                ai_reply_to_return = {
+                    "id": 0,  # temporary id since commit happens later
+                    "sender": "ai",
+                    "text": reply_text,
+                    "timestamp": iso_time
+                }
+                
+                # If we are NOT in simulation, send the actual email!
+                if conv.channel == "Email" and not msg_in.simulation_mode:
+                    subject = f"Re: {conv.deal.interested_product}" if (conv.deal and conv.deal.interested_product) else "Re: Inquiry"
+                    email_service.send_email(db, admin.company_id, customer.email, subject, reply_text)
+            else:
+                # Option B: Draft mode
+                ai_draft = models.Message(
+                    conversation_id=conv.id,
+                    sender="ai_draft",
+                    text=reply_text,
+                    timestamp=iso_time
+                )
+                db.add(ai_draft)
+                conv.status = "Open"
+                ai_reply_to_return = {
+                    "id": 0,
+                    "sender": "ai_draft",
+                    "text": reply_text,
+                    "timestamp": iso_time
+                }
     
     db.commit()
-    return {"status": "success"}
+    
+    # If we created a reply, retrieve its database ID
+    if ai_reply_to_return:
+        # Find the message we just added
+        db_msg = db.query(models.Message).filter(
+            models.Message.conversation_id == conv.id,
+            models.Message.sender == ai_reply_to_return["sender"]
+        ).order_by(models.Message.id.desc()).first()
+        if db_msg:
+            ai_reply_to_return["id"] = db_msg.id
+
+    return {"status": "success", "ai_reply": ai_reply_to_return}
+
+@app.post("/messages/{msg_id}/regenerate")
+def regenerate_draft(msg_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    msg = db.query(models.Message).filter(models.Message.id == msg_id).first()
+    if not msg or msg.sender != "ai_draft":
+        raise HTTPException(status_code=404, detail="Draft not found")
+        
+    conv = msg.conversation
+    customer = conv.customer
+    if customer.company_id != admin.company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    last_cust_msg = db.query(models.Message).filter(
+        models.Message.conversation_id == conv.id,
+        models.Message.sender == "customer"
+    ).order_by(models.Message.id.desc()).first()
+    
+    incoming_text = last_cust_msg.text if last_cust_msg else ""
+    
+    settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    if not settings:
+        raise HTTPException(status_code=400, detail="Settings not found")
+        
+    from .ai_service import generate_sales_reply
+    reply_text = generate_sales_reply(settings, customer, conv, incoming_text, force_variation=True)
+    
+    msg.text = reply_text
+    msg.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    db.commit()
+    
+    return {"status": "success", "text": reply_text}
 
 @app.post("/messages/{msg_id}/approve")
 def approve_message(msg_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
