@@ -4,13 +4,17 @@ import threading
 import imaplib
 import smtplib
 import email
+import hashlib
 from email.header import decode_header
 from email.message import EmailMessage
 import datetime
+import logging
 
 from ...database import SessionLocal
 from ... import models
 from ...ai_service import generate_sales_reply
+
+logger = logging.getLogger("email_service")
 
 class EmailIntegrationService:
     def __init__(self):
@@ -20,9 +24,10 @@ class EmailIntegrationService:
         self.last_error = None
         self.last_poll_time = None
         self.emails_processed = 0
+        self._poll_interval = 15  # Poll every 15 seconds
 
     def start(self):
-        print(f"[Email] Starting multi-tenant IMAP polling service.")
+        logger.info("[Email] Starting multi-tenant IMAP polling service (interval: %ds).", self._poll_interval)
         self.is_running = True
         thread = threading.Thread(target=self._poll_inbox, daemon=True)
         thread.start()
@@ -35,12 +40,38 @@ class EmailIntegrationService:
             "last_error": self.last_error,
         }
 
+    # ── On-demand fetch for a specific company ──────────────────
+    def fetch_now(self, company_id: int) -> dict:
+        """
+        Called by the /integrations/email/fetch endpoint.
+        Connects to IMAP, pulls UNSEEN emails, syncs to DB, returns count.
+        """
+        logger.info("[Email][Fetch] On-demand fetch triggered for company %d", company_id)
+        db = SessionLocal()
+        try:
+            settings = db.query(models.Settings).filter(
+                models.Settings.company_id == company_id
+            ).first()
+
+            if not settings or not settings.gmail_address or not settings.gmail_app_password:
+                logger.warning("[Email][Fetch] No email credentials configured for company %d", company_id)
+                return {"status": "no_credentials", "new_emails": 0}
+
+            new_count = self._check_company_emails(db, settings)
+            logger.info("[Email][Fetch] On-demand fetch complete for company %d: %d new emails", company_id, new_count)
+            return {"status": "ok", "new_emails": new_count}
+        except Exception as e:
+            logger.error("[Email][Fetch] Error during on-demand fetch for company %d: %s", company_id, e)
+            return {"status": "error", "error": str(e), "new_emails": 0}
+        finally:
+            db.close()
+
+    # ── Background polling loop ─────────────────────────────────
     def _poll_inbox(self):
-        backoff = 30
+        backoff = self._poll_interval
         while self.is_running:
             db = SessionLocal()
             try:
-                # Find all companies that have gmail configured
                 companies_with_email = db.query(models.Settings).filter(
                     models.Settings.gmail_address != None,
                     models.Settings.gmail_app_password != None,
@@ -48,62 +79,93 @@ class EmailIntegrationService:
                     models.Settings.gmail_app_password != ""
                 ).all()
 
+                if companies_with_email:
+                    logger.info("[Email][Poll] Polling %d company(ies) with configured email.", len(companies_with_email))
+                
                 for settings in companies_with_email:
                     self._check_company_emails(db, settings)
 
                 self.last_poll_time = datetime.datetime.utcnow().isoformat() + "Z"
                 self.last_error = None
-                backoff = 30
+                backoff = self._poll_interval
             except Exception as e:
                 self.last_error = str(e)
-                print(f"[Email] Global Polling Error: {e}")
+                logger.error("[Email][Poll] Global Polling Error: %s", e)
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 300)
             finally:
                 db.close()
             
-            time.sleep(30) # Poll every 30 seconds
+            time.sleep(self._poll_interval)
 
-    def _check_company_emails(self, db, settings):
+    # ── Check a single company's inbox ──────────────────────────
+    def _check_company_emails(self, db, settings) -> int:
         email_address = settings.gmail_address.strip()
         app_password = settings.gmail_app_password.strip()
         company_id = settings.company_id
+        new_count = 0
 
         mail = None
         try:
+            logger.info("[Email][IMAP] Connecting to %s for company %d...", self.imap_server, company_id)
             mail = imaplib.IMAP4_SSL(self.imap_server, 993)
             mail.login(email_address, app_password)
+            logger.info("[Email][IMAP] Login successful for %s", email_address)
             
             mail.select("INBOX")
             status, messages = mail.search(None, "UNSEEN")
-            if status != "OK" or not messages[0]:
-                return
+            
+            if status != "OK":
+                logger.warning("[Email][IMAP] SEARCH returned non-OK status for %s: %s", email_address, status)
+                return 0
+                
+            if not messages[0]:
+                logger.info("[Email][IMAP] No new (UNSEEN) emails for %s", email_address)
+                return 0
 
             email_ids = messages[0].split()
-            print(f"[Email] Found {len(email_ids)} new email(s) for {email_address} (Company {company_id})")
+            logger.info("[Email][IMAP] Found %d new email(s) for %s (Company %d)", len(email_ids), email_address, company_id)
 
             for email_id in email_ids:
                 try:
                     status, msg_data = mail.fetch(email_id, "(RFC822)")
                     if status != "OK":
+                        logger.warning("[Email][IMAP] Failed to FETCH email id %s", email_id)
                         continue
 
                     for response_part in msg_data:
                         if isinstance(response_part, tuple):
                             msg = email.message_from_bytes(response_part[1])
-                            self._parse_and_save(db, company_id, email_address, msg)
+                            saved = self._parse_and_save(db, company_id, email_address, msg)
+                            if saved:
+                                new_count += 1
                 except Exception as e:
-                    print(f"[Email] Error processing email id {email_id} for {email_address}: {e}")
+                    logger.error("[Email][IMAP] Error processing email id %s for %s: %s", email_id, email_address, e)
+        except imaplib.IMAP4.error as e:
+            logger.error("[Email][IMAP] Authentication/Connection Error for %s: %s", email_address, e)
+            self.last_error = f"IMAP Auth Error for {email_address}: {e}"
         except Exception as e:
-            print(f"[Email] Connection Error for {email_address}: {e}")
+            logger.error("[Email][IMAP] Connection Error for %s: %s", email_address, e)
+            self.last_error = str(e)
         finally:
             if mail:
                 try:
                     mail.logout()
                 except:
                     pass
+        
+        return new_count
 
-    def _parse_and_save(self, db, company_id, company_email, msg):
+    # ── Parse raw email and save to DB (with dedup) ─────────────
+    def _parse_and_save(self, db, company_id, company_email, msg) -> bool:
+        # --- Message-ID for deduplication ---
+        raw_message_id = msg.get("Message-ID", "")
+        if not raw_message_id:
+            # Generate a fingerprint from headers if no Message-ID
+            raw_message_id = hashlib.sha256(
+                f"{msg.get('From','')}{msg.get('Date','')}{msg.get('Subject','')}".encode()
+            ).hexdigest()
+        
         # --- Subject ---
         raw_subject = msg.get("Subject", "No Subject")
         subject_parts = decode_header(raw_subject)
@@ -123,11 +185,12 @@ class EmailIntegrationService:
             sender_email = sender_raw.split("<")[1].split(">")[0].strip()
 
         if not sender_email or "@" not in sender_email:
-            return
+            logger.warning("[Email][Parse] Skipping email with invalid sender: %s", sender_raw)
+            return False
 
         # Skip emails from yourself to avoid loops
         if sender_email.lower() == company_email.lower():
-            return
+            return False
 
         # Skip automated, spam, and marketing emails
         ignore_keywords = ["no-reply", "noreply", "newsletter", "marketing", "updates", "notifications", "do-not-reply", "mailer-daemon", "bounce"]
@@ -135,7 +198,15 @@ class EmailIntegrationService:
         
         email_lower = sender_email.lower()
         if any(kw in email_lower for kw in ignore_keywords) or any(email_lower.endswith(domain) for domain in ignore_domains):
-            return
+            return False
+
+        # --- Dedup Check: have we already stored this exact email? ---
+        existing = db.query(models.Message).filter(
+            models.Message.email_message_id == raw_message_id
+        ).first()
+        if existing:
+            logger.info("[Email][Dedup] Skipping already-saved email (Message-ID: %s)", raw_message_id[:40])
+            return False
 
         # --- Body ---
         body = ""
@@ -159,9 +230,11 @@ class EmailIntegrationService:
 
         body = body.strip() or "(No message body)"
 
-        self._process_incoming_email(db, company_id, company_email, sender_email, sender_name or sender_email, subject, body)
+        logger.info("[Email][Save] New email from %s, subject: '%s'", sender_email, subject[:60])
+        self._process_incoming_email(db, company_id, company_email, sender_email, sender_name or sender_email, subject, body, raw_message_id)
+        return True
 
-    def _process_incoming_email(self, db, company_id, company_email, sender_email, sender_name, subject, body):
+    def _process_incoming_email(self, db, company_id, company_email, sender_email, sender_name, subject, body, message_id):
         try:
             # 1. Find or create Customer scoped to this company
             customer = db.query(models.Customer).filter(
@@ -170,6 +243,7 @@ class EmailIntegrationService:
             ).first()
 
             if not customer:
+                logger.info("[Email][DB] Creating new customer: %s (Company %d)", sender_email, company_id)
                 customer = models.Customer(
                     company_id=company_id,
                     name=sender_name,
@@ -207,7 +281,7 @@ class EmailIntegrationService:
                 db.commit()
                 db.refresh(conversation)
 
-            # 3. Add the message
+            # 3. Add the message with email_message_id for dedup
             iso_time = datetime.datetime.utcnow().isoformat() + "Z"
             msg_count = db.query(models.Message).filter(
                 models.Message.conversation_id == conversation.id
@@ -220,6 +294,7 @@ class EmailIntegrationService:
                 sender="customer",
                 text=full_text,
                 timestamp=iso_time,
+                email_message_id=message_id,
             )
             db.add(new_msg)
 
@@ -230,7 +305,7 @@ class EmailIntegrationService:
             db.commit()
 
             self.emails_processed += 1
-            print(f"[Email] Saved message from {sender_email} to DB (Company {company_id}).")
+            logger.info("[Email][DB] Saved message from %s to DB (Company %d, Conv %d).", sender_email, company_id, conversation.id)
 
             # 4. AI Auto-reply
             settings = db.query(models.Settings).filter(models.Settings.company_id == company_id).first()
@@ -238,11 +313,11 @@ class EmailIntegrationService:
                 self._send_auto_reply(db, company_id, company_email, customer, conversation, subject, body, settings)
 
         except Exception as e:
-            print(f"[Email] DB Error processing {sender_email}: {e}")
+            logger.error("[Email][DB] Error processing %s: %s", sender_email, e)
             db.rollback()
 
     def _send_auto_reply(self, db, company_id, company_email, customer, conversation, original_subject, incoming_text, settings):
-        print(f"[Email] Generating AI reply for {customer.email}...")
+        logger.info("[Email][AI] Generating AI reply for %s...", customer.email)
         
         reply_text = generate_sales_reply(settings, customer, conversation, incoming_text)
         reply_subject = f"Re: {original_subject}" if not str(original_subject).startswith("Re:") else original_subject
@@ -264,7 +339,7 @@ class EmailIntegrationService:
                 conversation.last_message_text = reply_text[:120]
                 conversation.last_message_time = iso_time
                 db.commit()
-                print(f"[Email] AI auto-reply sent to {customer.email}")
+                logger.info("[Email][AI] Auto-reply sent to %s", customer.email)
         else:
             # OPTION B: Draft Mode
             ai_draft = models.Message(
@@ -276,13 +351,13 @@ class EmailIntegrationService:
             db.add(ai_draft)
             conversation.status = "Open"
             db.commit()
-            print(f"[Email] AI reply drafted for {customer.email}")
+            logger.info("[Email][AI] Reply drafted for %s", customer.email)
 
     def send_email(self, db, company_id, to_email, subject, body):
         # Fetch the company's SMTP credentials
         settings = db.query(models.Settings).filter(models.Settings.company_id == company_id).first()
         if not settings or not settings.gmail_address or not settings.gmail_app_password:
-            print(f"[Email] Cannot send - credentials not configured for company {company_id}.")
+            logger.error("[Email][SMTP] Cannot send - credentials not configured for company %d.", company_id)
             return False
 
         email_address = settings.gmail_address.strip()
@@ -299,10 +374,10 @@ class EmailIntegrationService:
                 server.login(email_address, app_password)
                 server.send_message(msg)
 
-            print(f"[Email] Email sent to {to_email} via {email_address}")
+            logger.info("[Email][SMTP] Email sent to %s via %s", to_email, email_address)
             return True
         except Exception as e:
-            print(f"[Email] SMTP Error for {email_address}: {e}")
+            logger.error("[Email][SMTP] Error for %s: %s", email_address, e)
             self.last_error = str(e)
             return False
 

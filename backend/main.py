@@ -359,6 +359,12 @@ def get_branding(request: Request, db: Session = Depends(get_db)):
         }
     return {"company_name": "AI Sales OS", "business_logo": None}
 
+@app.post("/integrations/email/fetch")
+def trigger_email_fetch(admin=Depends(get_current_admin)):
+    from .integrations.email.service import email_service
+    result = email_service.fetch_now(admin.company_id)
+    return result
+
 @app.get("/team-members", response_model=List[schemas.TeamMemberResponse])
 def get_team_members(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
     return db.query(models.TeamMember).filter(models.TeamMember.company_id == admin.company_id).all()

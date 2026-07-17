@@ -68,6 +68,8 @@ window.addEventListener('DOMContentLoaded', () => {
 function initApp() {
     fetchCustomers(true); // Load customers and auto-select the first one
     connectAdminWebSocket();
+    // Auto-poll db every 15s in case websocket misses push
+    setInterval(() => fetchCustomers(false), 15000);
 }
 
 let adminWs = null;
@@ -139,6 +141,37 @@ function setupEventListeners() {
 
     // Delete Customer Profile Button
     document.getElementById('action-delete-customer').addEventListener('click', handleDeleteCustomer);
+
+    // Inbox Refresh Button
+    const inboxRefreshBtn = document.getElementById('inbox-refresh-btn');
+    if (inboxRefreshBtn) {
+        inboxRefreshBtn.addEventListener('click', async function() {
+            const btn = this;
+            btn.disabled = true;
+            const icon = btn.querySelector('i');
+            icon.classList.add('fa-spin');
+            try {
+                const res = await fetch('/integrations/email/fetch', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'ok') {
+                        showToast(`Synced! Found ${data.new_emails} new emails.`, 'success');
+                    } else if (data.status === 'no_credentials') {
+                        showToast('Email not configured in settings.', 'error');
+                    } else {
+                        showToast('Sync error: ' + data.error, 'error');
+                    }
+                    await fetchCustomers(false);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to fetch emails', 'error');
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('fa-spin');
+            }
+        });
+    }
 
     // Quick Action button demo alerts
     document.getElementById('action-catalogue').addEventListener('click', () => showToast("Catalogue shared with customer"));
@@ -1006,7 +1039,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Integrations
                 document.getElementById('setting-gmail-address').value = currentSettings.gmail_address || '';
-                // Don't populate passwords from backend for security
+                if (currentSettings.gmail_address) {
+                    document.getElementById('setting-gmail-app-password').value = '********';
+                } else {
+                    document.getElementById('setting-gmail-app-password').value = '';
+                }
                 document.getElementById('setting-whatsapp-phone-id').value = currentSettings.whatsapp_phone_number_id || '';
                 document.getElementById('setting-whatsapp-verify-token').value = currentSettings.whatsapp_verify_token || '';
             }
@@ -1225,7 +1262,11 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Please fill in both Gmail address and App Password.', 'error');
             return;
         }
-        saveSettings({ gmail_address: gmail, gmail_app_password: appPw }, this);
+        const payload = { gmail_address: gmail };
+        if (appPw !== '********') {
+            payload.gmail_app_password = appPw;
+        }
+        saveSettings(payload, this);
     });
 
     // Integrations - WhatsApp
