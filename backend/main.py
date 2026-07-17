@@ -151,8 +151,17 @@ def calculate_lead_score(deal, customer) -> int:
         
     return min(score, 100)
 
+from sqlalchemy import text
+
 # Seed database function
 def seed_database(db: Session):
+    try:
+        db.execute(text("ALTER TABLE settings ADD COLUMN ai_auto_send BOOLEAN DEFAULT FALSE;"))
+        db.commit()
+        logger.info("DATABASE MIGRATION: Added ai_auto_send column to settings table.")
+    except Exception:
+        db.rollback()
+        
     if db.query(models.Company).count() == 0:
         logger.warning("DATABASE SEEDING: Database is empty. Creating default admin account. This usually means the database was just wiped.")
         company = models.Company(name="GarmentX Manufacturing")
@@ -511,6 +520,48 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
     if msg_in.sender == "human":
         conv.is_ai_managed = False
     
+    db.commit()
+    return {"status": "success"}
+
+@app.post("/messages/{msg_id}/approve")
+def approve_message(msg_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    msg = db.query(models.Message).filter(models.Message.id == msg_id).first()
+    if not msg or msg.sender != "ai_draft":
+        raise HTTPException(status_code=404, detail="Draft not found")
+        
+    conv = msg.conversation
+    customer = conv.customer
+    if customer.company_id != admin.company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    # Send email
+    subject = "Re: Inquiry"
+    if conv.deal and conv.deal.interested_product:
+        subject = f"Re: {conv.deal.interested_product}"
+        
+    success = email_service.send_email(db, admin.company_id, customer.email, subject, msg.text)
+    if success:
+        msg.sender = "ai"
+        msg.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+        conv.status = "Replied"
+        conv.last_message_time = msg.timestamp
+        db.commit()
+        return {"status": "success", "message": "Email sent"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send email")
+
+@app.post("/messages/{msg_id}/discard")
+def discard_message(msg_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    msg = db.query(models.Message).filter(models.Message.id == msg_id).first()
+    if not msg or msg.sender != "ai_draft":
+        raise HTTPException(status_code=404, detail="Draft not found")
+        
+    conv = msg.conversation
+    customer = conv.customer
+    if customer.company_id != admin.company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    db.delete(msg)
     db.commit()
     return {"status": "success"}
 

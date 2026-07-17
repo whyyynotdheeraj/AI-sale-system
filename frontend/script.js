@@ -530,15 +530,29 @@ function renderMessages(messagesList) {
 function appendMessage(msg) {
     const wrapper = document.createElement('div');
     const isLeft = msg.sender === 'customer';
-    wrapper.className = `msg-wrapper ${isLeft ? 'left' : 'right'} ${msg.sender === 'ai' ? 'ai-msg' : 'human-msg'}`;
+    const isDraft = msg.sender === 'ai_draft';
+    wrapper.className = `msg-wrapper ${isLeft ? 'left' : 'right'} ${msg.sender === 'ai' || isDraft ? 'ai-msg' : 'human-msg'}`;
 
     let tag = '';
     if (msg.sender === 'ai') tag = '<span class="sender-tag ai-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>';
+    else if (isDraft) tag = '<span class="sender-tag ai-tag" style="background:#f59e0b;color:#fff"><i class="fa-solid fa-pen"></i> AI Draft</span>';
     else if (msg.sender === 'human') tag = '<span class="sender-tag human-tag">Agent</span>';
     else tag = '<span class="sender-tag customer-tag">Customer</span>';
 
+    let draftActions = '';
+    if (isDraft) {
+        draftActions = `
+        <div style="margin-top:10px; display:flex; gap:8px;">
+            <button onclick="approveDraft(${msg.id})" style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-check"></i> Approve & Send</button>
+            <button onclick="discardDraft(${msg.id})" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-trash"></i> Discard</button>
+        </div>`;
+    }
+
     wrapper.innerHTML = `
-        <div class="msg-bubble">${msg.text}</div>
+        <div class="msg-bubble" ${isDraft ? 'style="border: 2px solid #f59e0b;"' : ''}>
+            ${msg.text}
+            ${draftActions}
+        </div>
         <div class="msg-info">
             ${isLeft ? tag : ''}
             <span class="msg-time">${msg.timestamp}</span>
@@ -548,6 +562,28 @@ function appendMessage(msg) {
 
     chatMessagesContainer.appendChild(wrapper);
     scrollChatToBottom();
+}
+
+async function approveDraft(msgId) {
+    try {
+        const res = await fetch(`/messages/${msgId}/approve`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${sessionToken}`}
+        });
+        if (res.ok) loadConversation(currentConversationId);
+        else alert("Failed to approve draft");
+    } catch (e) { console.error(e); }
+}
+
+async function discardDraft(msgId) {
+    try {
+        const res = await fetch(`/messages/${msgId}/discard`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${sessionToken}`}
+        });
+        if (res.ok) loadConversation(currentConversationId);
+        else alert("Failed to discard draft");
+    } catch (e) { console.error(e); }
 }
 
 // Update Details panel
@@ -957,6 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // AI
                 document.getElementById('setting-ai-enabled').checked = currentSettings.ai_enabled;
+                document.getElementById('setting-ai-auto-send').checked = currentSettings.ai_auto_send;
                 document.getElementById('setting-ai-greeting').value = currentSettings.greeting_message || '';
                 document.getElementById('setting-ai-delay').value = currentSettings.ai_reply_delay || 1;
                 document.getElementById('setting-ai-max-followups').value = currentSettings.max_followups || 3;
@@ -1056,6 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-settings-ai')?.addEventListener('click', function() {
         saveSettings({
             ai_enabled: document.getElementById('setting-ai-enabled').checked,
+            ai_auto_send: document.getElementById('setting-ai-auto-send').checked,
             greeting_message: document.getElementById('setting-ai-greeting').value,
             ai_reply_delay: parseInt(document.getElementById('setting-ai-delay').value) || 1,
             max_followups: parseInt(document.getElementById('setting-ai-max-followups').value) || 3

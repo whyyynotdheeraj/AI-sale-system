@@ -10,6 +10,7 @@ import datetime
 
 from ...database import SessionLocal
 from ... import models
+from ...ai_service import generate_sales_reply
 
 class EmailIntegrationService:
     def __init__(self):
@@ -232,37 +233,50 @@ class EmailIntegrationService:
             print(f"[Email] Saved message from {sender_email} to DB (Company {company_id}).")
 
             # 4. AI Auto-reply
-            if conversation.is_ai_managed:
-                self._send_auto_reply(db, company_id, company_email, customer, conversation, subject)
+            settings = db.query(models.Settings).filter(models.Settings.company_id == company_id).first()
+            if conversation.is_ai_managed and settings and settings.ai_enabled:
+                self._send_auto_reply(db, company_id, company_email, customer, conversation, subject, body, settings)
 
         except Exception as e:
             print(f"[Email] DB Error processing {sender_email}: {e}")
             db.rollback()
 
-    def _send_auto_reply(self, db, company_id, company_email, customer, conversation, original_subject):
-        first_name = customer.name.split(" ")[0] if customer.name else "there"
-        reply_text = (
-            f"Hi {first_name},\n\n"
-            f"Thank you for reaching out! We have received your email and our team will review it and get back to you as soon as possible.\n\n"
-            f"Best regards,\nAI Sales OS Team"
-        )
+    def _send_auto_reply(self, db, company_id, company_email, customer, conversation, original_subject, incoming_text, settings):
+        print(f"[Email] Generating AI reply for {customer.email}...")
+        
+        reply_text = generate_sales_reply(settings, customer, conversation, incoming_text)
         reply_subject = f"Re: {original_subject}" if not str(original_subject).startswith("Re:") else original_subject
 
-        success = self.send_email(db, company_id, customer.email, reply_subject, reply_text)
-        if success:
-            iso_time = datetime.datetime.utcnow().isoformat() + "Z"
-            ai_msg = models.Message(
+        iso_time = datetime.datetime.utcnow().isoformat() + "Z"
+        
+        if settings.ai_auto_send:
+            # OPTION A: Auto Send
+            success = self.send_email(db, company_id, customer.email, reply_subject, reply_text)
+            if success:
+                ai_msg = models.Message(
+                    conversation_id=conversation.id,
+                    sender="ai",
+                    text=reply_text,
+                    timestamp=iso_time,
+                )
+                db.add(ai_msg)
+                conversation.status = "Replied"
+                conversation.last_message_text = reply_text[:120]
+                conversation.last_message_time = iso_time
+                db.commit()
+                print(f"[Email] AI auto-reply sent to {customer.email}")
+        else:
+            # OPTION B: Draft Mode
+            ai_draft = models.Message(
                 conversation_id=conversation.id,
-                sender="ai",
+                sender="ai_draft",
                 text=reply_text,
                 timestamp=iso_time,
             )
-            db.add(ai_msg)
-            conversation.status = "Replied"
-            conversation.last_message_text = reply_text[:120]
-            conversation.last_message_time = iso_time
+            db.add(ai_draft)
+            conversation.status = "Open"
             db.commit()
-            print(f"[Email] AI auto-reply sent to {customer.email}")
+            print(f"[Email] AI reply drafted for {customer.email}")
 
     def send_email(self, db, company_id, to_email, subject, body):
         # Fetch the company's SMTP credentials

@@ -113,6 +113,7 @@ class Settings(Base):
     
     # AI Settings
     ai_enabled = Column(Boolean, default=True)
+    ai_auto_send = Column(Boolean, default=False)
     greeting_message = Column(String, default="Hello! Thank you for contacting us. How can I help you today?")
     ai_reply_delay = Column(Integer, default=1)  # seconds
     max_followups = Column(Integer, default=3)
