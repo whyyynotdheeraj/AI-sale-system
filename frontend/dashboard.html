@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Sales OS - Inbox</title>
+    <title>AI Sale OS - Inbox</title>
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,7 +30,7 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon"><i class="fa-solid fa-bolt"></i></span>
-                    <span class="logo-text">AI Sales OS</span>
+                    <span class="logo-text">AI Sale OS</span>
                 </div>
             </div>
 
@@ -340,11 +340,11 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Company Name</label>
-                                <input type="text" class="form-input" id="setting-company" placeholder="e.g. AI Sales OS">
+                                <input type="text" class="form-input" id="setting-company" placeholder="e.g. AI Sale OS">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Business Name (Trading As)</label>
-                                <input type="text" class="form-input" id="setting-business" placeholder="e.g. AI Sales OS Ltd">
+                                <input type="text" class="form-input" id="setting-business" placeholder="e.g. AI Sale OS Ltd">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Business Description</label>
@@ -633,7 +633,7 @@
                     <div class="settings-content" id="settings-integrations">
                         <div class="settings-section">
                             <h3 class="settings-section-title"><i class="fa-solid fa-envelope text-email"></i> Email Integration (Gmail IMAP)</h3>
-                            <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">Connect your company's Gmail account to automatically import emails into AI Sales OS. You MUST use a Google App Password, not your regular password.</p>
+                            <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">Connect your company's Gmail account to automatically import emails into AI Sale OS. You MUST use a Google App Password, not your regular password.</p>
                             <div class="form-group">
                                 <label class="form-label">Gmail Address</label>
                                 <input type="email" class="form-input" id="setting-gmail-address" placeholder="e.g. sales@yourcompany.com">
@@ -807,6 +807,36 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- AI Copilot Panel -->
+    <div id="ai-assist-panel" style="display:none; position:fixed; top:0; right:0; width:380px; height:100vh; background:var(--bg-card); border-left:1px solid var(--border-color); z-index:9998; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.1); animation: slideInRight 0.3s ease;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--color-primary); font-size:1.1rem;"></i>
+                <span style="font-weight:700; font-size:1rem; color:var(--text-main);">AI Copilot</span>
+                <span id="ai-copilot-status" style="display:none; width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulse 1s infinite;"></span>
+            </div>
+            <button id="ai-assist-close-btn" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1.1rem; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="padding:14px 20px; border-bottom:1px solid var(--border-color); background:var(--bg-main);">
+            <div style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Replying to</div>
+            <div id="ai-assist-incoming-preview" style="font-size:0.85rem; color:var(--text-main); line-height:1.4; font-style:italic;">Select a customer to generate a suggestion...</div>
+        </div>
+        <div style="flex:1; padding:20px; display:flex; flex-direction:column; gap:14px; overflow-y:auto;">
+            <label style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">AI Generated Draft</label>
+            <textarea id="ai-assist-draft-text" style="flex:1; min-height:200px; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:14px; font-family:var(--font-primary); font-size:0.88rem; line-height:1.6; color:var(--text-main); resize:none; outline:none; transition:0.2s;" placeholder="Click the floating AI button while viewing a conversation to generate a reply suggestion..."></textarea>
+        </div>
+        <div style="padding:14px 20px; border-top:1px solid var(--border-color); display:flex; gap:8px;">
+            <button id="ai-assist-insert-btn" style="flex:1; background:linear-gradient(135deg, var(--color-primary), #4f46e5); color:white; border:none; padding:10px; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:0.2s;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Insert</button>
+            <button id="ai-assist-regenerate-btn" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:0.2s;"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button id="ai-assist-copy-btn" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:0.2s;"><i class="fa-solid fa-copy"></i></button>
+        </div>
+    </div>
+
+    <!-- Floating AI Copilot Button -->
+    <div id="ai-fab" class="ai-fab">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
     </div>
 
     <script src="script.js"></script>

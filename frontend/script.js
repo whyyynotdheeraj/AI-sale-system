@@ -1,5 +1,5 @@
 // ==========================================
-// AI Sales OS - Frontend Logic (script.js)
+// AI Sale OS - Frontend Logic (script.js)
 // ==========================================
 
 // Global App State
@@ -654,24 +654,24 @@ function appendMessage(msg) {
 
     let tag = '';
     if (msg.sender === 'ai') tag = '<span class="sender-tag ai-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>';
-    else if (isDraft) tag = '<span class="sender-tag ai-tag" style="background:#f59e0b;color:#fff"><i class="fa-solid fa-pen"></i> AI Draft</span>';
+    else if (isDraft) tag = '<span class="sender-tag ai-tag"><i class="fa-solid fa-pen"></i> Draft</span>';
     else if (msg.sender === 'human') tag = '<span class="sender-tag human-tag">Agent</span>';
     else tag = '<span class="sender-tag customer-tag">Customer</span>';
 
     let draftActions = '';
     if (isDraft) {
         draftActions = `
-        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; border-top: 1px solid var(--border-color); padding-top: 8px;">
-            <button onclick="approveDraft(${msg.id})" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-check"></i> Approve & Send</button>
-            <button onclick="regenerateDraft(${msg.id}, this)" style="background:#6366f1; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-arrows-rotate"></i> Regenerate</button>
-            <button onclick="discardDraft(${msg.id})" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-trash"></i> Discard</button>
+        <div class="draft-actions">
+            <button onclick="approveDraft(${msg.id})" class="draft-action-btn send" title="Send"><i class="fa-solid fa-check"></i></button>
+            <button onclick="regenerateDraft(${msg.id}, this)" class="draft-action-btn regen" title="Regenerate"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button onclick="discardDraft(${msg.id})" class="draft-action-btn discard" title="Discard"><i class="fa-solid fa-xmark"></i></button>
         </div>`;
     }
 
     wrapper.innerHTML = `
         ${avatarHTML}
         <div class="msg-body-container">
-            <div class="msg-bubble" ${isDraft ? 'style="border: 1.5px solid #f59e0b;"' : ''}>
+            <div class="msg-bubble" ${isDraft ? 'style="border: 1.5px solid var(--color-primary);"' : ''}>
                 ${formatMessageText(msg.text)}
                 ${draftActions}
             </div>
@@ -929,7 +929,7 @@ async function fetchGlobalBranding() {
 
 function updateGlobalBranding(name, logo) {
     const logoTexts = document.querySelectorAll('.logo-text');
-    logoTexts.forEach(el => el.textContent = name || "AI Sales OS");
+    logoTexts.forEach(el => el.textContent = name || "AI Sale OS");
     
     // If we have a logo icon somewhere, update it
     const logoIcons = document.querySelectorAll('.logo-icon');
@@ -1684,3 +1684,168 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = `<div class="product-bars">${bars}</div>`;
     }
 });
+
+// ==========================================
+// AI COPILOT PANEL LOGIC
+// ==========================================
+(function() {
+    const aiAssistPanel = document.getElementById('ai-assist-panel');
+    const aiAssistCloseBtn = document.getElementById('ai-assist-close-btn');
+    const aiAssistIncomingPreview = document.getElementById('ai-assist-incoming-preview');
+    const aiCopilotStatus = document.getElementById('ai-copilot-status');
+    const aiAssistDraftText = document.getElementById('ai-assist-draft-text');
+    const aiAssistInsertBtn = document.getElementById('ai-assist-insert-btn');
+    const aiAssistRegenerateBtn = document.getElementById('ai-assist-regenerate-btn');
+    const aiAssistCopyBtn = document.getElementById('ai-assist-copy-btn');
+    const aiFab = document.getElementById('ai-fab');
+    const chatInput = document.getElementById('chat-input');
+
+    let currentCopilotConvId = null;
+
+    // ── Open Copilot Panel ──
+    function openCopilotPanel() {
+        if (typeof selectedCustomerId === 'undefined' || !selectedCustomerId) {
+            if (typeof showToast === 'function') showToast('Select a customer first', 'error');
+            return;
+        }
+        if (aiAssistPanel) {
+            aiAssistPanel.style.display = 'flex';
+            if (aiAssistDraftText) aiAssistDraftText.value = '';
+            if (aiAssistIncomingPreview) aiAssistIncomingPreview.textContent = 'Loading...';
+            if (aiCopilotStatus) aiCopilotStatus.style.display = 'inline-block';
+            generateCopilotSuggestion();
+        }
+    }
+
+    // Make openCopilotPanel globally accessible
+    window.openCopilotPanel = openCopilotPanel;
+
+    // ── Close ──
+    if (aiAssistCloseBtn) {
+        aiAssistCloseBtn.addEventListener('click', () => {
+            if (aiAssistPanel) aiAssistPanel.style.display = 'none';
+        });
+    }
+
+    // ── Regenerate ──
+    if (aiAssistRegenerateBtn) {
+        aiAssistRegenerateBtn.addEventListener('click', () => {
+            if (!currentCopilotConvId) return;
+            if (aiAssistDraftText) aiAssistDraftText.value = '';
+            if (aiCopilotStatus) aiCopilotStatus.style.display = 'inline-block';
+            generateCopilotSuggestion();
+        });
+    }
+
+    // ── Insert into Composer ──
+    if (aiAssistInsertBtn) {
+        aiAssistInsertBtn.addEventListener('click', () => {
+            const text = aiAssistDraftText ? aiAssistDraftText.value : '';
+            if (text && chatInput) {
+                chatInput.value = text;
+                chatInput.focus();
+                chatInput.dispatchEvent(new Event('input'));
+                if (typeof showToast === 'function') showToast('Inserted into composer', 'success');
+            }
+        });
+    }
+
+    // ── Copy ──
+    if (aiAssistCopyBtn) {
+        aiAssistCopyBtn.addEventListener('click', async () => {
+            const text = aiAssistDraftText ? aiAssistDraftText.value : '';
+            if (text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    if (typeof showToast === 'function') showToast('Copied to clipboard', 'success');
+                } catch (e) {
+                    if (typeof showToast === 'function') showToast('Copy failed', 'error');
+                }
+            }
+        });
+    }
+
+    // ── Generate Suggestion via API ──
+    async function generateCopilotSuggestion() {
+        try {
+            const convRes = await fetch(`/conversations/by-customer/${selectedCustomerId}`);
+            if (!convRes.ok) throw new Error('Could not fetch conversation');
+            const convData = await convRes.json();
+            currentCopilotConvId = convData.conversation_id;
+
+            const suggestRes = await fetch(`/api/conversations/${currentCopilotConvId}/copilot-suggest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!suggestRes.ok) throw new Error('AI generation failed');
+            const suggestData = await suggestRes.json();
+
+            if (aiAssistIncomingPreview) aiAssistIncomingPreview.textContent = 'Re: "' + suggestData.in_reply_to + '"';
+            if (aiCopilotStatus) aiCopilotStatus.style.display = 'none';
+            typeWriter(aiAssistDraftText, suggestData.suggestion, 12);
+        } catch (err) {
+            console.error('[Copilot]', err);
+            if (aiCopilotStatus) aiCopilotStatus.style.display = 'none';
+            if (aiAssistIncomingPreview) aiAssistIncomingPreview.textContent = 'Error generating suggestion.';
+            if (aiAssistDraftText) aiAssistDraftText.value = 'Failed to generate. Please check your Gemini API key in the .env file and try again.';
+            if (typeof showToast === 'function') showToast('AI generation failed', 'error');
+        }
+    }
+
+    function typeWriter(el, text, speed) {
+        if (!el) return;
+        el.value = '';
+        let i = 0;
+        (function tick() {
+            if (i < text.length) {
+                el.value += text.charAt(i++);
+                setTimeout(tick, speed);
+            }
+        })();
+    }
+
+    // ── Draggable Floating AI Button ──
+    if (aiFab) {
+        let isDragging = false;
+        let hasMoved = false;
+        let startX, startY, startLeft, startTop;
+
+        function onStart(e) {
+            isDragging = true;
+            hasMoved = false;
+            const touch = e.touches ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
+            const rect = aiFab.getBoundingClientRect();
+            startLeft = rect.left;
+            startTop = rect.top;
+            aiFab.classList.add('dragging');
+            e.preventDefault();
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+            aiFab.style.left = (startLeft + dx) + 'px';
+            aiFab.style.top = (startTop + dy) + 'px';
+            aiFab.style.right = 'auto';
+            aiFab.style.bottom = 'auto';
+        }
+
+        function onEnd() {
+            isDragging = false;
+            aiFab.classList.remove('dragging');
+            if (!hasMoved) openCopilotPanel();
+        }
+
+        aiFab.addEventListener('mousedown', onStart);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        aiFab.addEventListener('touchstart', onStart, { passive: false });
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }
+})();

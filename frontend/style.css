@@ -1,5 +1,5 @@
 /* ==========================================
-   AI Sales OS - Core Styling (style.css)
+   AI Sale OS - Core Styling (style.css)
    Theme: Modern SaaS (Intercom & Linear inspired)
    ========================================== */
 
@@ -2012,3 +2012,106 @@ input:checked + .slider:before {
 .product-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
 @media (max-width: 1200px) { .analytics-kpi-row { grid-template-columns: repeat(2, 1fr); } .analytics-charts-row { flex-direction: column; } }
 @media (max-width: 768px) { .analytics-kpi-row { grid-template-columns: 1fr; } }
+
+/* ══════════════════════════════════════════════
+   DRAFT ACTION BUTTONS (Minimal Icon-Only)
+   ══════════════════════════════════════════════ */
+.draft-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.draft-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+}
+
+.draft-action-btn:hover {
+    transform: scale(1.1);
+}
+
+.draft-action-btn.send {
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+.draft-action-btn.send:hover {
+    background: var(--color-success);
+    color: white;
+}
+
+.draft-action-btn.regen {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+.draft-action-btn.regen:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.draft-action-btn.discard {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+.draft-action-btn.discard:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+/* ══════════════════════════════════════════════
+   FLOATING AI COPILOT FAB
+   ══════════════════════════════════════════════ */
+.ai-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: grab;
+    z-index: 9999;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(99, 102, 241, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    animation: fabPulse 2.5s infinite;
+}
+
+.ai-fab:hover {
+    transform: scale(1.12);
+    box-shadow: 0 6px 28px rgba(99, 102, 241, 0.55);
+}
+
+.ai-fab:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+.ai-fab.dragging {
+    cursor: grabbing;
+    animation: none;
+    opacity: 0.85;
+}
+
+@keyframes fabPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45), 0 0 0 12px rgba(99, 102, 241, 0); }
+}

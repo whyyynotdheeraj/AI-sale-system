@@ -1,4 +1,4 @@
-import os
+﻿import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,7 +31,7 @@ from .integrations.facebook.router import router as facebook_router
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="AI Sales OS API")
+app = FastAPI(title="AI Sale OS API")
 
 # Mount integrations
 app.include_router(website_router)
@@ -371,7 +371,7 @@ def get_branding(request: Request, db: Session = Depends(get_db)):
             "company_name": settings.business_name,
             "business_logo": settings.business_logo
         }
-    return {"company_name": "AI Sales OS", "business_logo": None}
+    return {"company_name": "AI Sale OS", "business_logo": None}
 
 @app.post("/integrations/email/fetch")
 def trigger_email_fetch(admin=Depends(get_current_admin)):
@@ -735,6 +735,49 @@ def get_analytics(admin=Depends(get_current_admin), db: Session = Depends(get_db
         "funnel": [{"stage": s, "count": c} for s, c in stages.items()],
         "top_customers": [],
         "products": {}
+    }
+
+@app.get("/conversations/by-customer/{customer_id}")
+def get_conversation_info(customer_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Returns conversation ID for a customer — used by AI Copilot."""
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.company_id == admin.company_id
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    conv = db.query(models.Conversation).filter(models.Conversation.customer_id == customer_id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="No conversation found")
+    return {"conversation_id": conv.id, "channel": conv.channel, "status": conv.status}
+
+@app.post("/api/conversations/{conv_id}/copilot-suggest")
+def copilot_suggest(conv_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Generate on-demand AI reply suggestion for Copilot panel. Does NOT save to DB."""
+    conv = db.query(models.Conversation).filter(models.Conversation.id == conv_id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    customer = conv.customer
+    if customer.company_id != admin.company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    last_customer_msg = db.query(models.Message).filter(
+        models.Message.conversation_id == conv.id,
+        models.Message.sender == "customer"
+    ).order_by(models.Message.id.desc()).first()
+    if not last_customer_msg:
+        raise HTTPException(status_code=400, detail="No customer message found")
+    settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    if not settings:
+        raise HTTPException(status_code=400, detail="Settings not configured")
+    from .ai_service import generate_sales_reply
+    import logging
+    logger = logging.getLogger("copilot")
+    logger.info(f"[Copilot] Generating suggestion for conv {conv_id}")
+    reply_text = generate_sales_reply(settings, customer, conv, last_customer_msg.text)
+    return {
+        "status": "success",
+        "suggestion": reply_text,
+        "in_reply_to": last_customer_msg.text[:200]
     }
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
