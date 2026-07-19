@@ -89,6 +89,7 @@ class Message(Base):
     sender = Column(String)  # customer, ai, human
     text = Column(Text)
     timestamp = Column(String)
+    email_message_id = Column(String, nullable=True)  # For email dedup
 
     conversation = relationship("Conversation", back_populates="messages")
 
@@ -128,6 +129,9 @@ class Settings(Base):
     theme = Column(String, default="light")  # light, dark, system
     primary_color = Column(String, default="#6366f1")
     font_size = Column(String, default="medium")  # small, medium, large
+
+    # AI Knowledge Base
+    ai_knowledge_base = Column(Text, nullable=True)  # Detailed business info for AI context
 
     # Integrations
     gmail_address = Column(String, nullable=True)

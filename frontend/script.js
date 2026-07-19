@@ -603,7 +603,7 @@ async function approveDraft(msgId) {
         const res = await fetch(`/messages/${msgId}/approve`, {
             method: 'POST'
         });
-        if (res.ok) loadConversation(currentConversationId);
+        if (res.ok) fetchMessages(selectedCustomerId);
         else alert("Failed to approve draft");
     } catch (e) { console.error(e); }
 }
@@ -618,7 +618,7 @@ async function regenerateDraft(msgId, btnEl) {
             method: 'POST'
         });
         if (res.ok) {
-            loadConversation(currentConversationId);
+            fetchMessages(selectedCustomerId);
             showToast("Draft regenerated successfully!", "success");
         } else {
             alert("Failed to regenerate draft");
@@ -638,7 +638,7 @@ async function discardDraft(msgId) {
         const res = await fetch(`/messages/${msgId}/discard`, {
             method: 'POST'
         });
-        if (res.ok) loadConversation(currentConversationId);
+        if (res.ok) fetchMessages(selectedCustomerId);
         else alert("Failed to discard draft");
     } catch (e) { console.error(e); }
 }
@@ -1054,6 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('setting-ai-greeting').value = currentSettings.greeting_message || '';
                 document.getElementById('setting-ai-delay').value = currentSettings.ai_reply_delay || 1;
                 document.getElementById('setting-ai-max-followups').value = currentSettings.max_followups || 3;
+                document.getElementById('setting-ai-knowledge-base').value = currentSettings.ai_knowledge_base || '';
                 
                 // Notifications
                 document.getElementById('setting-notify-desktop').checked = currentSettings.desktop_notifications;
@@ -1158,6 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
             greeting_message: document.getElementById('setting-ai-greeting').value,
             ai_reply_delay: parseInt(document.getElementById('setting-ai-delay').value) || 1,
             max_followups: parseInt(document.getElementById('setting-ai-max-followups').value) || 3
+        }, this);
+    });
+
+    // Save Knowledge Base
+    document.getElementById('save-settings-knowledge-base')?.addEventListener('click', function() {
+        saveSettings({
+            ai_knowledge_base: document.getElementById('setting-ai-knowledge-base').value
         }, this);
     });
 

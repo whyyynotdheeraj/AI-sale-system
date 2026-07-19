@@ -154,6 +154,7 @@ class SettingsResponse(BaseModel):
     currency: Optional[str] = None
     ai_enabled: Optional[bool] = None
     ai_auto_send: Optional[bool] = None
+    ai_knowledge_base: Optional[str] = None
     greeting_message: Optional[str] = None
     ai_reply_delay: Optional[int] = None
     max_followups: Optional[int] = None
@@ -186,6 +187,7 @@ class SettingsUpdate(BaseModel):
     currency: Optional[str] = None
     ai_enabled: Optional[bool] = None
     ai_auto_send: Optional[bool] = None
+    ai_knowledge_base: Optional[str] = None
     greeting_message: Optional[str] = None
     ai_reply_delay: Optional[int] = None
     max_followups: Optional[int] = None
