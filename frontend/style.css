@@ -1002,56 +1002,191 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar for Chat Messages */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.25);
+    border-radius: 10px;
+    transition: background 0.25s ease;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.45);
 }
 
 /* Bubble Message Styling */
 .msg-wrapper {
     display: flex;
-    flex-direction: column;
-    max-width: 75%;
+    gap: 12px;
+    margin-bottom: 8px;
+    max-width: 85%;
+    align-items: flex-end;
+    animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .msg-wrapper.left {
     align-self: flex-start;
-    align-items: flex-start;
+    flex-direction: row;
 }
 
 .msg-wrapper.right {
     align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.msg-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.msg-wrapper.left .msg-avatar {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+    color: #475569;
+    border: 1px solid var(--border-color);
+}
+
+.msg-wrapper.right.ai-msg .msg-avatar {
+    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+    color: #ffffff;
+}
+
+.msg-wrapper.right.human-msg .msg-avatar {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+}
+
+.msg-body-container {
+    display: flex;
+    flex-direction: column;
+    max-width: calc(100% - 48px);
+}
+
+.msg-wrapper.left .msg-body-container {
+    align-items: flex-start;
+}
+
+.msg-wrapper.right .msg-body-container {
     align-items: flex-end;
 }
 
 .msg-bubble {
-    padding: 12px 16px;
-    border-radius: var(--radius-md);
-    font-size: 0.88rem;
-    line-height: 1.45;
+    padding: 14px 18px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    line-height: 1.5;
     position: relative;
-    box-shadow: var(--shadow-sm);
-    white-space: pre-line;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    word-break: break-word;
 }
 
 /* Left Message: Customer */
 .msg-wrapper.left .msg-bubble {
     background-color: var(--bg-card);
     color: var(--text-main);
-    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
     border: 1px solid var(--border-color);
 }
 
 /* Right Message: AI */
 .msg-wrapper.right.ai-msg .msg-bubble {
-    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
-    color: var(--text-inverse);
-    border-top-right-radius: 4px;
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15);
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1.5px solid var(--color-primary);
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.06);
 }
 
 /* Right Message: Human */
 .msg-wrapper.right.human-msg .msg-bubble {
-    background: linear-gradient(135deg, #0284c7, #0369a1);
-    color: var(--text-inverse);
-    border-top-right-radius: 4px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1.5px solid #0284c7;
+    border-bottom-right-radius: 4px;
+}
+
+/* Format bullet points & bold lists inside chat nicely */
+.msg-bubble ul, .msg-bubble ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.msg-bubble li {
+    margin-bottom: 6px;
+}
+
+.msg-bubble p {
+    margin: 0 0 10px 0;
+}
+
+.msg-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+/* Product recommendation cards inside chat */
+.rich-product-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.rich-product-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.rich-product-header {
+    font-weight: 700;
+    color: var(--text-main);
+    font-size: 0.88rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.rich-product-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.rich-product-meta {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-primary);
 }
 
 .msg-info {

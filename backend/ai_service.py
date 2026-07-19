@@ -7,20 +7,19 @@ from google.genai import types
 logger = logging.getLogger("ai_service")
 
 FALLBACKS = [
-    "Thank you for contacting {company_name}! A sales executive will review your request and get back to you shortly.",
-    "Hi there! Thanks for reaching out to {company_name}. We've received your query and a representative will connect with you soon.",
-    "Hello! Thank you for your interest in {company_name}. Our team is looking into your inquiry and we will get back to you shortly.",
-    "Thanks for messaging {company_name}! Someone from our sales department will get back to you within a few hours.",
-    "Greetings from {company_name}! We appreciate you reaching out. A sales specialist will follow up with you very soon.",
+    "Thank you for reaching out to {company_name}! I would love to help you with our garment collections. May I know what products you are looking for today?",
+    "Hi there! Warm welcome to {company_name}. We specialize in high-quality apparel manufacturing. What type of garments or styles are you interested in?",
+    "Hello! Thanks for contacting {company_name}. We're excited to partner with you. Are you looking for custom designs, or wholesale purchases?",
 ]
 
 def generate_sales_reply(settings, customer, conversation, new_message_text: str, force_variation: bool = False) -> str:
     """
-    Generates an AI sales reply using Gemini based on company context, knowledge base, and customer history.
+    Generates a highly-engaging, context-aware AI sales reply using Gemini.
+    Behaves like an experienced sales executive, qualifing leads, suggesting products, and keeping the conversation flowing.
     """
-    biz_name = getattr(settings, 'business_name', None) or "our company"
-    biz_desc = getattr(settings, 'business_description', None) or "We provide enterprise services."
-    greeting = getattr(settings, 'greeting_message', None) or "Hello! How can we help you today?"
+    biz_name = getattr(settings, 'business_name', None) or "our manufacturing company"
+    biz_desc = getattr(settings, 'business_description', None) or "We manufacture premium garments."
+    greeting = getattr(settings, 'greeting_message', None) or "Hello! Welcome to our store. How can I help you today?"
     knowledge = getattr(settings, 'ai_knowledge_base', None) or ""
     
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -31,51 +30,65 @@ def generate_sales_reply(settings, customer, conversation, new_message_text: str
     try:
         client = genai.Client(api_key=api_key)
         
-        # Build the System Prompt with full business context
-        system_instruction = f"""You are a highly professional and friendly sales representative for '{biz_name}'.
-
-== COMPANY INFORMATION ==
-Company Name: {biz_name}
-Business Description: {biz_desc}
-Default Greeting: {greeting}
-"""
-        
-        if knowledge:
-            system_instruction += f"""
-== BUSINESS KNOWLEDGE BASE ==
-The following is detailed information about the company's products, services, pricing, policies, and FAQs. Use this to answer customer questions accurately:
-
-{knowledge}
-"""
-
-        # Customer context
+        # Build customer background and context
         cust_name = getattr(customer, 'name', None) or "Customer"
-        cust_email = getattr(customer, 'email', None) or ""
-        cust_company = getattr(customer, 'buyer_company_name', None) or ""
-        
-        system_instruction += f"""
-== CUSTOMER CONTEXT ==
+        cust_email = getattr(customer, 'email', None) or "Not provided"
+        cust_phone = getattr(customer, 'phone', None) or "Not provided"
+        cust_company = getattr(customer, 'company', None) or "Not provided"
+        lead_status = getattr(customer, 'lead_status', None) or "New"
+        lead_score = getattr(customer, 'lead_score', 0)
+        interested_product = getattr(customer, 'interested_product', None) or "Not specified"
+        budget = getattr(customer, 'budget', None) or "Not specified"
+        city = getattr(customer, 'city', None) or "Not specified"
+
+        # Build system instruction enforcing active, high-converting Sales Agent persona
+        system_instruction = f"""You are 'Sarah', a highly experienced, charming, and smart Senior Sales Executive working for '{biz_name}'.
+Your primary goal is to engage the customer, build trust, recommend products, collect qualification details naturally, and convert every conversation into a high-value bulk order.
+
+== THE COMPANY ==
+Company Name: {biz_name}
+What We Do: {biz_desc}
+
+== BUSINESS KNOWLEDGE BASE (Products, Pricing, MOQ, Delivery, & FAQs) ==
+Use this knowledge base to answer questions. NEVER make up products, prices, customization options, or delivery times that are not in this text:
+{knowledge}
+
+== CUSTOMER CARD (YOUR MEMORY) ==
 Customer Name: {cust_name}
-Customer Email: {cust_email}
-Customer Company: {cust_company}
+Email Address: {cust_email}
+Phone Number: {cust_phone}
+Company/Business Name: {cust_company}
+Current Interested Product: {interested_product}
+Budget: {budget}
+City/Location: {city}
+Lead Status: {lead_status}
+Lead Score: {lead_score}
 
-== YOUR INSTRUCTIONS ==
-1. Answer the customer's question directly, using the Business Knowledge Base above.
-2. Be warm, professional, and concise.
-3. If the customer asks about specific products, pricing, MOQ, delivery etc., answer using ONLY the knowledge base above. Do NOT invent information.
-4. If you don't have the answer in the knowledge base, politely say a sales manager will provide details.
-5. Keep responses under 150 words unless a detailed answer is needed.
-6. Always address the customer by name ({cust_name}).
-7. Sign off professionally on behalf of {biz_name}.
+== YOUR CONVERSATIONAL & SALES PROTOCOLS ==
+1. **Never be a passive FAQ bot.** Do not just give a single-line answer or dump dry facts. Start with a warm, helpful sales tone, answer their question using the knowledge base, and immediately pivot to guide the conversation.
+2. **Follow-Up Questions**: Always end your response with 1 or 2 relevant follow-up questions to keep the conversation going and qualify the lead. Do NOT ask for everything at once (that feels robotic). Ask step-by-step.
+   - If they ask for *price*: Give the pricing range from the knowledge base, then ask about their required quantity and preferred fabric/style.
+   - If they ask for *MOQ*: Answer, then ask what specific styles or products they are targeting.
+   - If they ask about *customization*: Outline what we offer, then ask for their logo requirements, quantity, and target delivery date.
+   - If they ask about *delivery*: Answer, then ask for their delivery city or country.
+3. **Lead Qualification Flow**: Gather their business details naturally. If they haven't provided these yet, try to discover:
+   - Are they buying retail or wholesale/bulk?
+   - What is their target quantity/pieces?
+   - What is their city or location?
+   - Can we get their contact number or email to send our latest catalog/quote?
+4. **Memory Usage**: Reference details they already shared. Do not ask for quantity or product type again if it is listed in the Customer Card above or has been mentioned in the recent chat history.
+5. **Product Recommendations**: Actively suggest products matching their interests. Explain *why* you suggest them (e.g. "Since you mentioned needing soft, breathable fabrics for summer, I highly recommend our Rayon Printed Kurtis because...").
+6. **Cross-Selling & Upselling**: If they show interest in one garment, suggest a matching product (e.g. "We also manufacture high-quality matching leggings/bottoms that go perfectly with these kurtis. Would you like to see options for those?"). Encourage larger quantities for better discounts.
+7. **Human Tone**: Be conversational, warm, and highly professional. Never start messages with "According to our information..." or "Based on our knowledge base...". Speak as "I" or "We". Use formatted bullet points for readability when presenting lists.
 """
-
         if force_variation:
-            system_instruction += "\n\nIMPORTANT: You MUST rephrase your response completely. Use different sentence structure, vocabulary, and opening. Do NOT repeat any previous wording."
+            system_instruction += "\n\nIMPORTANT: You must rewrite this response completely. Use different opening greetings, structure, and vocabulary. Make it sound fresh while keeping the sales objective."
 
         # Build chat history from conversation
         contents = []
         if conversation and hasattr(conversation, 'messages') and conversation.messages:
-            for msg in conversation.messages[-6:]:
+            # Take last 8 messages for a wider context memory
+            for msg in conversation.messages[-8:]:
                 if msg.text == new_message_text:
                     continue
                 role = "user" if msg.sender == "customer" else "model"
@@ -94,22 +107,22 @@ Customer Company: {cust_company}
             )
         )
 
-        logger.info(f"[AI Service] Generating reply for customer '{cust_name}' (knowledge base: {'YES' if knowledge else 'NO'})")
+        logger.info(f"[AI Service] Generating sales response for {cust_name}")
 
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                temperature=0.8 if force_variation else 0.7,
-                max_output_tokens=400
+                temperature=0.85 if force_variation else 0.75,
+                max_output_tokens=500
             )
         )
         
         result = response.text.strip()
-        logger.info(f"[AI Service] Generated reply ({len(result)} chars)")
+        logger.info(f"[AI Service] Sales response generated successfully ({len(result)} chars)")
         return result
     
     except Exception as e:
-        logger.error(f"[AI Service] Error generating reply: {e}")
+        logger.error(f"[AI Service] Error in generate_sales_reply: {e}")
         return random.choice(FALLBACKS).format(company_name=biz_name)

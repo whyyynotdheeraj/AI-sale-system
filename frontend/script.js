@@ -559,12 +559,98 @@ function renderMessages(messagesList) {
     scrollChatToBottom();
 }
 
+// Helper function to convert markdown/text formatting into rich HTML elements
+function formatMessageText(text) {
+    if (!text) return "";
+    
+    // Escape HTML to prevent injection
+    let formatted = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Parse bold texts (**bold**)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Parse lists (lines beginning with -, *, or •)
+    const lines = formatted.split("\n");
+    let inList = false;
+    let listHTML = "";
+    const parsedLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        // Product card format parser: e.g. [Product Name: Details, Price: Rs. X]
+        const productMatch = line.match(/^\[Product:\s*([^,\]]+)(?:,\s*Price:\s*([^,\]]+))?(?:,\s*MOQ:\s*([^,\]]+))?(?:,\s*Desc:\s*([^\]]+))?\]$/i);
+        if (productMatch) {
+            if (inList) {
+                parsedLines.push("</ul>");
+                inList = false;
+            }
+            const name = productMatch[1];
+            const price = productMatch[2] || "Contact Sales";
+            const moq = productMatch[3] || "N/A";
+            const desc = productMatch[4] || "";
+            
+            parsedLines.push(`
+                <div class="rich-product-card">
+                    <div class="rich-product-header">
+                        <span><i class="fa-solid fa-shirt" style="margin-right: 6px; color: var(--color-primary);"></i>${name}</span>
+                        <span>${price}</span>
+                    </div>
+                    ${desc ? `<div class="rich-product-desc">${desc}</div>` : ''}
+                    <div class="rich-product-meta"><i class="fa-solid fa-boxes-stacked" style="margin-right: 4px;"></i>MOQ: ${moq}</div>
+                </div>
+            `);
+            continue;
+        }
+
+        if (line.startsWith("- ") || line.startsWith("* ") || line.startsWith("• ")) {
+            if (!inList) {
+                parsedLines.push("<ul style='margin-left: 20px; margin-bottom: 10px;'>");
+                inList = true;
+            }
+            const content = line.substring(2);
+            parsedLines.push(`<li>${content}</li>`);
+        } else {
+            if (inList) {
+                parsedLines.push("</ul>");
+                inList = false;
+            }
+            
+            if (line === "") {
+                parsedLines.push("<br/>");
+            } else {
+                parsedLines.push(`<p>${line}</p>`);
+            }
+        }
+    }
+    
+    if (inList) {
+        parsedLines.push("</ul>");
+    }
+
+    return parsedLines.join("");
+}
+
 // Append a message bubble to Chat View
 function appendMessage(msg) {
     const wrapper = document.createElement('div');
     const isLeft = msg.sender === 'customer';
     const isDraft = msg.sender === 'ai_draft';
     wrapper.className = `msg-wrapper ${isLeft ? 'left' : 'right'} ${msg.sender === 'ai' || isDraft ? 'ai-msg' : 'human-msg'}`;
+
+    // Avatars based on sender
+    let avatarHTML = '';
+    if (isLeft) {
+        const firstLetter = customers.find(c => c.id === selectedCustomerId)?.name.charAt(0).toUpperCase() || 'C';
+        avatarHTML = `<div class="msg-avatar"><i class="fa-solid fa-user"></i></div>`;
+    } else if (msg.sender === 'ai' || isDraft) {
+        avatarHTML = `<div class="msg-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>`;
+    } else {
+        avatarHTML = `<div class="msg-avatar"><i class="fa-solid fa-user-tie"></i></div>`;
+    }
 
     let tag = '';
     if (msg.sender === 'ai') tag = '<span class="sender-tag ai-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>';
@@ -575,22 +661,25 @@ function appendMessage(msg) {
     let draftActions = '';
     if (isDraft) {
         draftActions = `
-        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button onclick="approveDraft(${msg.id})" style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-check"></i> Approve & Send</button>
-            <button onclick="regenerateDraft(${msg.id}, this)" style="background:#6366f1; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-arrows-rotate"></i> Regenerate</button>
-            <button onclick="discardDraft(${msg.id})" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;"><i class="fa-solid fa-trash"></i> Discard</button>
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; border-top: 1px solid var(--border-color); padding-top: 8px;">
+            <button onclick="approveDraft(${msg.id})" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-check"></i> Approve & Send</button>
+            <button onclick="regenerateDraft(${msg.id}, this)" style="background:#6366f1; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-arrows-rotate"></i> Regenerate</button>
+            <button onclick="discardDraft(${msg.id})" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; transition: 0.2s;"><i class="fa-solid fa-trash"></i> Discard</button>
         </div>`;
     }
 
     wrapper.innerHTML = `
-        <div class="msg-bubble" ${isDraft ? 'style="border: 2px solid #f59e0b;"' : ''}>
-            ${msg.text}
-            ${draftActions}
-        </div>
-        <div class="msg-info">
-            ${isLeft ? tag : ''}
-            <span class="msg-time">${msg.timestamp}</span>
-            ${!isLeft ? tag : ''}
+        ${avatarHTML}
+        <div class="msg-body-container">
+            <div class="msg-bubble" ${isDraft ? 'style="border: 1.5px solid #f59e0b;"' : ''}>
+                ${formatMessageText(msg.text)}
+                ${draftActions}
+            </div>
+            <div class="msg-info">
+                ${isLeft ? tag : ''}
+                <span class="msg-time">${msg.timestamp}</span>
+                ${!isLeft ? tag : ''}
+            </div>
         </div>
     `;
 
