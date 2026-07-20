@@ -1,4 +1,4 @@
-﻿import os
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -509,7 +509,7 @@ def get_messages(customer_id: int, admin=Depends(get_current_admin), db: Session
     if conv.unread:
         conv.unread = False
         db.commit()
-    return db.query(models.Message).filter(models.Message.conversation_id == conv.id).all()
+    return db.query(models.Message).filter(models.Message.conversation_id == conv.id).order_by(models.Message.id.asc()).all()
 
 @app.post("/messages")
 def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
