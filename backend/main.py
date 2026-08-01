@@ -154,27 +154,9 @@ def calculate_lead_score(deal, customer) -> int:
 from sqlalchemy import text
 
 # Seed database function
+# NOTE: Schema migrations (ALTER TABLE, CREATE TABLE) are handled by auto_migrate.py
+# which runs before this function and uses IF NOT EXISTS for idempotency.
 def seed_database(db: Session):
-    try:
-        db.execute(text("ALTER TABLE settings ADD COLUMN ai_auto_send BOOLEAN DEFAULT FALSE;"))
-        db.commit()
-        logger.info("DATABASE MIGRATION: Added ai_auto_send column to settings table.")
-    except Exception:
-        db.rollback()
-        
-    try:
-        db.execute(text("ALTER TABLE messages ADD COLUMN email_message_id VARCHAR;"))
-        db.commit()
-        logger.info("DATABASE MIGRATION: Added email_message_id column to messages table.")
-    except Exception:
-        db.rollback()
-    
-    try:
-        db.execute(text("ALTER TABLE settings ADD COLUMN ai_knowledge_base TEXT;"))
-        db.commit()
-        logger.info("DATABASE MIGRATION: Added ai_knowledge_base column to settings table.")
-    except Exception:
-        db.rollback()
         
     if db.query(models.Company).count() == 0:
         logger.warning("DATABASE SEEDING: Database is empty. Creating default admin account. This usually means the database was just wiped.")
