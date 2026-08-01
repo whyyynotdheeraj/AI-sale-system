@@ -1,7 +1,7 @@
 import json
 import logging
 import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from . import models, ai_provider
 
