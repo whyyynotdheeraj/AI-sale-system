@@ -404,8 +404,14 @@ def get_customers(admin=Depends(get_current_admin), db: Session = Depends(get_db
     ).all()
     res = []
     for c in customers_list:
-        conv = c.conversations[0] if c.conversations else None
-        deal = c.deals[0] if c.deals else None
+        # Pick the latest active conversation for this customer
+        conv = db.query(models.Conversation).filter(
+            models.Conversation.customer_id == c.id
+        ).order_by(models.Conversation.id.desc()).first()
+
+        deal = db.query(models.Deal).filter(
+            models.Deal.customer_id == c.id
+        ).order_by(models.Deal.id.desc()).first()
         
         res.append({
             "id": c.id,
@@ -425,11 +431,14 @@ def get_customers(admin=Depends(get_current_admin), db: Session = Depends(get_db
             "channel": conv.channel if conv else "Website",
             "status": conv.status if conv else "New",
             "unread": conv.unread if conv else False,
-            "last_message_time": conv.last_message_time if conv else None,
+            "last_message_time": conv.last_message_time if conv else "",
             "last_message_text": conv.last_message_text if conv else None,
             "is_ai_managed": conv.is_ai_managed if conv else True,
             "simulation_stage": conv.simulation_stage if conv else 0
         })
+    
+    # Sort conversations by last_message_time descending
+    res.sort(key=lambda x: x["last_message_time"] or "", reverse=True)
     return res
 
 @app.get("/customers/{customer_id}", response_model=schemas.CustomerResponse)
@@ -440,8 +449,15 @@ def get_customer(customer_id: int, admin=Depends(get_current_admin), db: Session
     ).first()
     if not c:
         raise HTTPException(status_code=404, detail="Customer not found")
-    conv = c.conversations[0] if c.conversations else None
-    deal = c.deals[0] if c.deals else None
+    
+    conv = db.query(models.Conversation).filter(
+        models.Conversation.customer_id == c.id
+    ).order_by(models.Conversation.id.desc()).first()
+
+    deal = db.query(models.Deal).filter(
+        models.Deal.customer_id == c.id
+    ).order_by(models.Deal.id.desc()).first()
+
     return {
         "id": c.id,
         "company_id": c.company_id,

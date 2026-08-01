@@ -833,9 +833,16 @@ function setModeUI(isSimMode) {
 }
 
 function updateSidebarUnreadCount() {
-    const count = customers.filter(c => c.unread).length;
-    sidebarUnreadCount.innerText = count;
-    sidebarUnreadCount.style.display = count > 0 ? 'inline-block' : 'none';
+    const unreadTotal = customers.filter(c => c.unread).length;
+    sidebarUnreadCount.innerText = unreadTotal;
+    sidebarUnreadCount.style.display = unreadTotal > 0 ? 'inline-block' : 'none';
+
+    const emailUnread = customers.filter(c => c.channel === 'Email' && c.unread).length;
+    const sidebarEmailCount = document.getElementById('sidebar-email-count');
+    if (sidebarEmailCount) {
+        sidebarEmailCount.innerText = emailUnread;
+        sidebarEmailCount.style.display = emailUnread > 0 ? 'inline-block' : 'none';
+    }
 }
 
 function showTypingIndicator(show) {

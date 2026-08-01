@@ -113,23 +113,29 @@ class EmailIntegrationService:
             logger.info("[Email][IMAP] Login successful for %s", email_address)
             
             mail.select("INBOX")
+            # Search UNSEEN first, if 0 found, fall back to ALL (latest 50) so already-read emails are still imported
             status, messages = mail.search(None, "UNSEEN")
+            email_ids = []
+            if status == "OK" and messages[0]:
+                email_ids = messages[0].split()
             
-            if status != "OK":
-                logger.warning("[Email][IMAP] SEARCH returned non-OK status for %s: %s", email_address, status)
-                return 0
-                
-            if not messages[0]:
-                logger.info("[Email][IMAP] No new (UNSEEN) emails for %s", email_address)
+            if not email_ids:
+                # Fallback to last 50 emails in INBOX
+                status, messages = mail.search(None, "ALL")
+                if status == "OK" and messages[0]:
+                    all_ids = messages[0].split()
+                    email_ids = all_ids[-50:]  # fetch latest 50
+
+            if not email_ids:
+                logger.info("[Email][IMAP] No emails found for %s", email_address)
                 return 0
 
-            email_ids = messages[0].split()
-            logger.info("[Email][IMAP] Found %d new email(s) for %s (Company %d)", len(email_ids), email_address, company_id)
+            logger.info("[Email][IMAP] Found %d email candidate(s) to process for %s (Company %d)", len(email_ids), email_address, company_id)
 
             for email_id in email_ids:
                 try:
                     status, msg_data = mail.fetch(email_id, "(RFC822)")
-                    if status != "OK":
+                    if status != "OK" or not msg_data:
                         logger.warning("[Email][IMAP] Failed to FETCH email id %s", email_id)
                         continue
 
@@ -151,7 +157,7 @@ class EmailIntegrationService:
             if mail:
                 try:
                     mail.logout()
-                except:
+                except Exception:
                     pass
         
         return new_count
@@ -192,12 +198,11 @@ class EmailIntegrationService:
         if sender_email.lower() == company_email.lower():
             return False
 
-        # Skip automated, spam, and marketing emails
-        ignore_keywords = ["no-reply", "noreply", "newsletter", "marketing", "updates", "notifications", "do-not-reply", "mailer-daemon", "bounce"]
-        ignore_domains = ["youtube.com", "google.com", "facebookmail.com", "twitter.com", "linkedin.com", "instagram.com", "github.com", "render.com"]
-        
+        # Skip automated system bots & bounces
+        ignore_senders = ["mailer-daemon@", "postmaster@", "no-reply@", "noreply@", "do-not-reply@"]
         email_lower = sender_email.lower()
-        if any(kw in email_lower for kw in ignore_keywords) or any(email_lower.endswith(domain) for domain in ignore_domains):
+        if any(bot in email_lower for bot in ignore_senders):
+            logger.info("[Email][Parse] Skipping automated bot email: %s", sender_email)
             return False
 
         # --- Dedup Check: have we already stored this exact email? ---
