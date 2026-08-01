@@ -2027,7 +2027,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (aiAssistIncomingPreview) aiAssistIncomingPreview.textContent = 'Re: "' + suggestData.in_reply_to + '"';
             if (aiCopilotStatus) aiCopilotStatus.style.display = 'none';
-            typeWriter(aiAssistDraftText, suggestData.suggestion, 12);
+            typeWriter(aiAssistDraftText, suggestData.suggested_reply || suggestData.suggestion, 12);
         } catch (err) {
             console.error('[Copilot]', err);
             if (aiCopilotStatus) aiCopilotStatus.style.display = 'none';
@@ -2094,3 +2094,204 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('touchend', onEnd);
     }
 })();
+
+// ==========================================
+// WORKFLOW AUTOMATION PAGE LOGIC
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const workflowMenuBtn = document.getElementById('menu-workflows');
+    const workflowsPage = document.getElementById('workflows-page');
+    const workflowsBackBtn = document.getElementById('workflows-back-btn');
+    const wfRefreshBtn = document.getElementById('wf-refresh-tasks-btn');
+    const dashboardGrid = document.querySelector('.dashboard-grid');
+    const analyticsPage = document.getElementById('analytics-page');
+    const settingsPage = document.getElementById('settings-page');
+    const pageTitleEl = document.getElementById('page-title');
+
+    const WORKFLOW_TEMPLATES = [
+        { id: 'auto-reply', icon: 'fa-reply', color: '#6366f1', bg: 'rgba(99,102,241,0.1)', title: 'Auto-Reply to New Inquiry', desc: 'AI replies within 30 seconds when a new customer messages for the first time.', trigger: 'New Message', action: 'AI Reply' },
+        { id: 'hot-lead-alert', icon: 'fa-fire', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', title: 'Hot Lead Alert', desc: 'Notify the sales team when a lead score rises above 75.', trigger: 'Score > 75', action: 'Send Alert' },
+        { id: 'cold-followup', icon: 'fa-clock', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', title: 'Cold Lead Re-Engagement', desc: 'Auto-send a follow-up message after 3 days of silence.', trigger: '3 Day Silence', action: 'Send Follow-up' },
+        { id: 'catalog-send', icon: 'fa-images', color: '#10b981', bg: 'rgba(16,185,129,0.1)', title: 'Auto-Send Catalog', desc: 'Detect catalog/price list requests and attach the product catalog automatically.', trigger: 'Catalog Request', action: 'Send Catalog' },
+        { id: 'human-escalation', icon: 'fa-user-tie', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', title: 'Human Escalation Trigger', desc: 'Hand conversation to human agent after 5 AI exchanges without conversion.', trigger: '5 AI Turns', action: 'Escalate' },
+        { id: 'lead-qualify', icon: 'fa-clipboard-check', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', title: 'Lead Qualification Flow', desc: 'Automatically extract MOQ, product, budget, and timeline from the conversation.', trigger: 'First Message', action: 'Extract Data' },
+    ];
+
+    function renderWorkflowTemplates() {
+        const grid = document.getElementById('workflow-templates-grid');
+        if (!grid) return;
+        const savedStates = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
+        grid.innerHTML = WORKFLOW_TEMPLATES.map(t => {
+            const isActive = savedStates[t.id] !== false; // Default ON
+            return `
+            <div class="wf-template-card" style="background: var(--panel-bg); border: 1px solid ${isActive ? t.color : 'var(--border-color)'}; border-radius: 14px; padding: 18px; transition: all 0.3s; cursor: pointer; position: relative; overflow: hidden;" data-wf-id="${t.id}">
+                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: ${isActive ? t.color : 'var(--border-color)'}; border-radius: 14px 0 0 14px;"></div>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: ${t.bg}; display: flex; align-items: center; justify-content: center; color: ${t.color}; font-size: 1rem;">
+                        <i class="fa-solid ${t.icon}"></i>
+                    </div>
+                    <label class="switch" style="flex-shrink: 0;"><input type="checkbox" class="wf-template-toggle" data-wf-id="${t.id}" ${isActive ? 'checked' : ''}><span class="slider round"></span></label>
+                </div>
+                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 6px;">${t.title}</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">${t.desc}</div>
+                <div style="display: flex; gap: 8px;">
+                    <span style="padding: 3px 8px; background: ${t.bg}; color: ${t.color}; font-size: 0.7rem; font-weight: 600; border-radius: 6px;"><i class="fa-solid fa-bolt"></i> ${t.trigger}</span>
+                    <span style="padding: 3px 8px; background: var(--bg-main); color: var(--text-muted); font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color);">${t.action}</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Wire toggles
+        document.querySelectorAll('.wf-template-toggle').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                e.stopPropagation();
+                const id = e.target.dataset.wfId;
+                const states = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
+                states[id] = e.target.checked;
+                localStorage.setItem('wf-template-states', JSON.stringify(states));
+                const t = WORKFLOW_TEMPLATES.find(x => x.id === id);
+                if (t) {
+                    const card = e.target.closest('.wf-template-card');
+                    if (card) {
+                        card.style.borderColor = e.target.checked ? t.color : 'var(--border-color)';
+                        card.querySelector('div[style*="position: absolute"]').style.background = e.target.checked ? t.color : 'var(--border-color)';
+                    }
+                }
+                showToast(e.target.checked ? `✅ Workflow "${t ? t.title : id}" activated` : `⏸ Workflow paused`, 'success');
+            });
+        });
+    }
+
+    async function loadWorkflowTasks() {
+        const container = document.getElementById('wf-tasks-container');
+        if (!container) return;
+        try {
+            const res = await fetch('/api/analytics/ai-dashboard');
+            if (!res.ok) throw new Error('Failed');
+            const data = await res.json();
+            const pending = data.telemetry.active_tasks;
+            // Update stat cards
+            document.getElementById('wf-stat-pending').textContent = pending;
+            document.getElementById('wf-stat-active').textContent = WORKFLOW_TEMPLATES.filter(t => {
+                const states = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
+                return states[t.id] !== false;
+            }).length;
+            document.getElementById('wf-stat-done').textContent = data.telemetry.total_ai_requests;
+            document.getElementById('wf-stat-followups').textContent = pending;
+        } catch(e) {
+            console.error('Workflow load error:', e);
+        }
+
+        // Render empty or stub task list
+        if (container) {
+            container.innerHTML = `
+            <div style="overflow-x: auto;">
+                <table class="team-table" style="width: 100%;">
+                    <thead><tr>
+                        <th>Task Type</th><th>Customer</th><th>Triggered By</th><th>Status</th><th>Time</th>
+                    </tr></thead>
+                    <tbody id="wf-tasks-tbody">
+                        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);">
+                            <i class="fa-solid fa-robot" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:8px;"></i>
+                            Workflow engine is live. Tasks will appear here as AI processes conversations.
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>`;
+        }
+    }
+
+    function showWorkflows() {
+        dashboardGrid.style.display = 'none';
+        if (settingsPage) settingsPage.style.display = 'none';
+        if (analyticsPage) analyticsPage.style.display = 'none';
+        if (workflowsPage) { workflowsPage.style.display = 'flex'; }
+        if (pageTitleEl) pageTitleEl.textContent = 'Workflows';
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        if (workflowMenuBtn) workflowMenuBtn.classList.add('active');
+        renderWorkflowTemplates();
+        loadWorkflowTasks();
+    }
+
+    function hideWorkflows() {
+        if (workflowsPage) workflowsPage.style.display = 'none';
+        dashboardGrid.style.display = 'flex';
+        if (pageTitleEl) pageTitleEl.textContent = 'Inbox';
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('menu-inbox')?.classList.add('active');
+    }
+
+    if (workflowMenuBtn) workflowMenuBtn.addEventListener('click', (e) => { e.preventDefault(); showWorkflows(); });
+    if (workflowsBackBtn) workflowsBackBtn.addEventListener('click', hideWorkflows);
+    if (wfRefreshBtn) wfRefreshBtn.addEventListener('click', loadWorkflowTasks);
+
+    // Save Auto-Pilot Rules
+    document.getElementById('save-autopilot-rules-btn')?.addEventListener('click', () => {
+        const rules = {
+            auto_reply: document.getElementById('autopilot-new-inquiry')?.checked,
+            hot_lead_alert: document.getElementById('autopilot-hot-lead')?.checked,
+            cold_reengagement: document.getElementById('autopilot-cold-reengagement')?.checked,
+            auto_catalog: document.getElementById('autopilot-catalog')?.checked,
+            escalate_to_human: document.getElementById('autopilot-escalate')?.checked,
+        };
+        localStorage.setItem('ai-autopilot-rules', JSON.stringify(rules));
+        showToast('Auto-Pilot rules saved!', 'success');
+    });
+
+    // Restore saved auto-pilot state
+    const savedRules = JSON.parse(localStorage.getItem('ai-autopilot-rules') || '{}');
+    if (savedRules.auto_reply !== undefined) document.getElementById('autopilot-new-inquiry').checked = savedRules.auto_reply;
+    if (savedRules.hot_lead_alert !== undefined) document.getElementById('autopilot-hot-lead').checked = savedRules.hot_lead_alert;
+    if (savedRules.cold_reengagement !== undefined) document.getElementById('autopilot-cold-reengagement').checked = savedRules.cold_reengagement;
+    if (savedRules.auto_catalog !== undefined) document.getElementById('autopilot-catalog').checked = savedRules.auto_catalog;
+    if (savedRules.escalate_to_human !== undefined) document.getElementById('autopilot-escalate').checked = savedRules.escalate_to_human;
+});
+
+// ==========================================
+// AI TELEMETRY SECTION (IN ANALYTICS PAGE)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Hook into analytics page load to also fetch AI telemetry
+    const origLoadAnalytics = window._loadAnalytics;
+
+    async function loadAITelemetry() {
+        try {
+            const res = await fetch('/api/analytics/ai-dashboard');
+            if (!res.ok) return;
+            const data = await res.json();
+            const t = data.telemetry;
+            const s = data.sales_insights;
+            const telTotalCalls = document.getElementById('tel-total-calls');
+            const telAvgLatency = document.getElementById('tel-avg-latency');
+            const telCost = document.getElementById('tel-cost');
+            const telTasks = document.getElementById('tel-tasks');
+            const telObjections = document.getElementById('tel-objections');
+            const telWins = document.getElementById('tel-wins');
+
+            if (telTotalCalls) telTotalCalls.textContent = t.total_ai_requests || 0;
+            if (telAvgLatency) telAvgLatency.textContent = (t.avg_latency_ms || 0) + 'ms';
+            if (telCost) telCost.textContent = '$' + (t.total_estimated_cost_usd || 0).toFixed(4);
+            if (telTasks) telTasks.textContent = t.active_tasks || 0;
+            if (telObjections && s.most_common_objections) {
+                telObjections.innerHTML = s.most_common_objections.map(o => `<li>${o}</li>`).join('');
+            }
+            if (telWins && s.top_winning_reasons) {
+                telWins.innerHTML = s.top_winning_reasons.map(w => `<li>${w}</li>`).join('');
+            }
+        } catch(e) { console.error('AI telemetry error:', e); }
+    }
+
+    // Patch the analytics menu listener to also load telemetry
+    const analyticsMenuBtn = document.getElementById('menu-analytics');
+    if (analyticsMenuBtn) {
+        analyticsMenuBtn.addEventListener('click', () => {
+            setTimeout(loadAITelemetry, 300);
+        });
+    }
+
+    // Also refresh on the existing analytics refresh button
+    const analyticsRefreshBtn = document.getElementById('analytics-refresh-btn');
+    if (analyticsRefreshBtn) {
+        analyticsRefreshBtn.addEventListener('click', loadAITelemetry);
+    }
+});

@@ -6,7 +6,7 @@ import datetime
 import hashlib
 import secrets
 import bcrypt
-from fastapi import FastAPI, Depends, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -821,7 +821,7 @@ def copilot_suggest(conv_id: int, admin=Depends(get_current_admin), db: Session 
     reply_text = generate_sales_reply(settings, customer, conv, last_customer_msg.text, db=db)
     return {
         "status": "success",
-        "suggestion": reply_text,
+        "suggested_reply": reply_text,
         "in_reply_to": last_customer_msg.text[:200]
     }
 
@@ -861,15 +861,22 @@ def update_company_brain(brain: schemas.CompanyBrainUpdate, admin=Depends(get_cu
     return {"status": "success", "message": "Company Brain updated successfully"}
 
 @app.post("/api/knowledge-base/upload")
-def upload_knowledge_document(req: schemas.KnowledgeDocumentUploadRequest, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
-    """Module 5: Upload & index catalog/policy document into RAG chunks."""
+async def upload_knowledge_document(file: UploadFile = File(...), admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 5: Upload & index catalog/policy document into RAG chunks via multipart form."""
     from .file_ingestion import DocumentIngestionEngine
+    allowed_types = ["text/plain", "text/csv", "application/pdf", "application/octet-stream"]
+    content_bytes = await file.read()
+    try:
+        content_text = content_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        content_text = str(content_bytes)
+    
     result = DocumentIngestionEngine.process_and_index_document(
         db=db,
         company_id=admin.company_id,
-        filename=req.filename,
-        content_text=req.content_text,
-        category=req.category or "Catalog/Policy"
+        filename=file.filename,
+        content_text=content_text,
+        category="Catalog/Policy"
     )
     return result
 
