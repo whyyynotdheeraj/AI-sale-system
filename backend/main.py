@@ -245,6 +245,8 @@ def seed_database(db: Session):
 
 @app.on_event("startup")
 def on_startup():
+    from .auto_migrate import run_auto_migrations
+    run_auto_migrations(engine)
     db = next(get_db())
     seed_database(db)
     email_service.start()
