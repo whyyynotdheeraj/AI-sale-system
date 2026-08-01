@@ -224,6 +224,61 @@ function setupEventListeners() {
         });
     }
 
+    // Company Brain & RAG Document Upload Buttons
+    const saveBrainBtn = document.getElementById('save-settings-brain');
+    if (saveBrainBtn) {
+        saveBrainBtn.addEventListener('click', saveCompanyBrain);
+    }
+
+    const ragFileInput = document.getElementById('rag-file-input');
+    const uploadRagBtn = document.getElementById('upload-rag-btn');
+    const ragFileName = document.getElementById('rag-file-name');
+
+    if (ragFileInput) {
+        ragFileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                ragFileName.innerText = `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                uploadRagBtn.style.display = 'inline-block';
+            }
+        });
+    }
+
+    if (uploadRagBtn) {
+        uploadRagBtn.addEventListener('click', async () => {
+            const file = ragFileInput.files[0];
+            if (!file) return;
+
+            uploadRagBtn.disabled = true;
+            uploadRagBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing & Indexing...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/knowledge-base/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(`Document indexed successfully! ${data.chunks_created} chunks added to RAG database.`, 'success');
+                    ragFileName.innerText = '';
+                    uploadRagBtn.style.display = 'none';
+                    ragFileInput.value = '';
+                } else {
+                    showToast("Failed to index document", "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Error uploading document", "error");
+            } finally {
+                uploadRagBtn.disabled = false;
+                uploadRagBtn.innerHTML = '<i class="fa-solid fa-gears"></i> Process & Index Document';
+            }
+        });
+    }
+
     // Quick Action button demo alerts
     document.getElementById('action-catalogue').addEventListener('click', () => showToast("Catalogue shared with customer"));
     document.getElementById('action-quotation').addEventListener('click', () => showToast("Quotation sent to email"));
@@ -895,7 +950,54 @@ async function fetchCopilotSuggestion() {
     }
 }
 
-// Reset UI state when empty
+// Company Brain & RAG Document Handlers
+async function fetchCompanyBrain() {
+    try {
+        const res = await fetch('/api/company-brain');
+        if (res.ok) {
+            const data = await res.json();
+            if (document.getElementById('setting-brain-moq')) document.getElementById('setting-brain-moq').value = data.moq_info || '';
+            if (document.getElementById('setting-brain-pricing')) document.getElementById('setting-brain-pricing').value = data.pricing_tiers || '';
+            if (document.getElementById('setting-brain-shipping')) document.getElementById('setting-brain-shipping').value = data.shipping_policy || '';
+            if (document.getElementById('setting-brain-payment')) document.getElementById('setting-brain-payment').value = data.payment_terms || '';
+            if (document.getElementById('setting-brain-return')) document.getElementById('setting-brain-return').value = data.return_policy || '';
+            if (document.getElementById('setting-brain-gst')) document.getElementById('setting-brain-gst').value = data.gst_number || '';
+            if (document.getElementById('setting-brain-location')) document.getElementById('setting-brain-location').value = data.location || '';
+            if (document.getElementById('setting-brain-strategy')) document.getElementById('setting-brain-strategy').value = data.owner_sales_strategy || '';
+        }
+    } catch (e) {
+        console.error("Error fetching company brain:", e);
+    }
+}
+
+async function saveCompanyBrain() {
+    const payload = {
+        moq_info: document.getElementById('setting-brain-moq').value,
+        pricing_tiers: document.getElementById('setting-brain-pricing').value,
+        shipping_policy: document.getElementById('setting-brain-shipping').value,
+        payment_terms: document.getElementById('setting-brain-payment').value,
+        return_policy: document.getElementById('setting-brain-return').value,
+        gst_number: document.getElementById('setting-brain-gst').value,
+        location: document.getElementById('setting-brain-location').value,
+        owner_sales_strategy: document.getElementById('setting-brain-strategy').value
+    };
+
+    try {
+        const res = await fetch('/api/company-brain', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast("Company Brain Rules saved successfully!");
+        } else {
+            showToast("Failed to save Company Brain Rules", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Error saving Company Brain", "error");
+    }
+}
 function clearChatUI() {
     document.getElementById('chat-customer-title').innerText = 'Select a conversation';
     document.getElementById('chat-customer-subtitle').innerText = 'Choose a lead from the inbox to reply';
@@ -1301,6 +1403,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 document.getElementById('setting-whatsapp-phone-id').value = currentSettings.whatsapp_phone_number_id || '';
                 document.getElementById('setting-whatsapp-verify-token').value = currentSettings.whatsapp_verify_token || '';
+                // Load Company Brain Rules
+                fetchCompanyBrain();
             }
         } catch(e) { console.error('Error loading settings', e); }
     }

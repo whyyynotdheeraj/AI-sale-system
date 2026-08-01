@@ -521,34 +521,65 @@
                             <button class="btn-primary" id="save-settings-ai">Save Changes</button>
                         </div>
 
-                        <!-- AI Knowledge Base Section -->
+                        <!-- Module 1: Structured Company Brain Section -->
                         <div class="settings-section" style="margin-top: 1.5rem;">
-                            <h3 class="settings-section-title"><i class="fa-solid fa-brain" style="color: var(--primary); margin-right: 0.5rem;"></i>Business Knowledge Base</h3>
+                            <h3 class="settings-section-title"><i class="fa-solid fa-brain" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Company Brain Rules</h3>
                             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-                                Add detailed information about your business here. The AI will use this to generate accurate, context-aware responses to customer inquiries. Include product details, pricing, MOQ, delivery policies, FAQs, etc.
+                                Define your business operational rules so the AI acts like a professional sales executive without hallucinating.
                             </p>
                             <div class="form-group">
-                                <label class="form-label">Knowledge Base Content</label>
-                                <textarea class="form-textarea" id="setting-ai-knowledge-base" rows="12" placeholder="Example:
-
-== PRODUCTS ==
-- Premium Cotton T-Shirts: Rs. 250-400 per piece, MOQ 100
-- Polo Shirts: Rs. 350-500 per piece, MOQ 50
-- Denim Jeans: Rs. 800-1200 per piece, MOQ 200
-
-== DELIVERY ==
-- Standard delivery: 7-10 business days
-- Express delivery: 3-5 business days (extra 15% charge)
-
-== PAYMENT TERMS ==
-- 50% advance, 50% on delivery
-- Net 30 for repeat customers
-
-== FAQs ==
-- Do you offer custom printing? Yes, we offer screen printing and embroidery.
-- What is the return policy? 7-day return for manufacturing defects only."></textarea>
+                                <label class="form-label">Minimum Order Quantity (MOQ)</label>
+                                <input type="text" class="form-input" id="setting-brain-moq" placeholder="e.g. 100 pcs per style / 50 pcs per color">
                             </div>
-                            <button class="btn-primary" id="save-settings-knowledge-base"><i class="fa-solid fa-floppy-disk" style="margin-right: 0.5rem;"></i>Save Knowledge Base</button>
+                            <div class="form-group">
+                                <label class="form-label">Pricing Tiers & Bulk Discounts</label>
+                                <textarea class="form-textarea" id="setting-brain-pricing" rows="3" placeholder="e.g. 100-500 pcs: Rs.450/pc, 500+ pcs: Rs.390/pc"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Shipping & Delivery Policy</label>
+                                <textarea class="form-textarea" id="setting-brain-shipping" rows="2" placeholder="e.g. Dispatch within 3 business days via Surface Express. Express air available (+15%)."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Payment Terms</label>
+                                <textarea class="form-textarea" id="setting-brain-payment" rows="2" placeholder="e.g. 50% advance, 50% prior to dispatch. Net 30 for verified repeat buyers."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Return Policy</label>
+                                <textarea class="form-textarea" id="setting-brain-return" rows="2" placeholder="e.g. 7-day replacement for manufacturing defects only. No returns on customized orders."></textarea>
+                            </div>
+                            <div style="display: flex; gap: 16px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">GST Number</label>
+                                    <input type="text" class="form-input" id="setting-brain-gst" placeholder="e.g. 27AAAAA0000A1Z5">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Manufacturing Location</label>
+                                    <input type="text" class="form-input" id="setting-brain-location" placeholder="e.g. Surat, Gujarat, India">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Sales Strategy Notes</label>
+                                <textarea class="form-textarea" id="setting-brain-strategy" rows="2" placeholder="e.g. Always push for sample order first if buyer is hesitant. Offer 5% discount if quantity > 1000 pcs."></textarea>
+                            </div>
+                            <button class="btn-primary" id="save-settings-brain"><i class="fa-solid fa-floppy-disk" style="margin-right: 0.5rem;"></i>Save Company Brain Rules</button>
+                        </div>
+
+                        <!-- Module 2 & 5: Local RAG Knowledge Document Upload Section -->
+                        <div class="settings-section" style="margin-top: 1.5rem;">
+                            <h3 class="settings-section-title"><i class="fa-solid fa-file-pdf" style="color: var(--color-primary); margin-right: 0.5rem;"></i> RAG Document Ingestion</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+                                Upload product catalogs (PDF, CSV, TXT) to index into your private local RAG database.
+                            </p>
+                            
+                            <div class="form-group" style="border: 2px dashed var(--border-color); padding: 20px; text-align: center; border-radius: 8px; background: var(--panel-bg);">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--color-primary); margin-bottom: 8px;"></i>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Upload Catalog or Price List Document</div>
+                                <small style="color: var(--text-muted); display: block; margin-bottom: 12px;">Supports PDF, CSV, TXT files (Max 10MB)</small>
+                                <input type="file" id="rag-file-input" accept=".pdf,.csv,.txt" style="display: none;">
+                                <button type="button" class="btn-primary btn-sm" onclick="document.getElementById('rag-file-input').click()"><i class="fa-solid fa-file-circle-plus"></i> Select File to Index</button>
+                                <div id="rag-file-name" style="margin-top: 8px; font-weight: 600; font-size: 0.85rem; color: var(--color-primary);"></div>
+                            </div>
+                            <button type="button" class="btn-primary" id="upload-rag-btn" style="display: none; margin-top: 10px;"><i class="fa-solid fa-gears"></i> Process & Index Document</button>
                         </div>
                     </div>
 
