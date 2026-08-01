@@ -197,6 +197,37 @@
                         <span class="typing-text">AI is thinking...</span>
                     </div>
 
+                    <!-- AI Copilot Toolbar -->
+                    <div class="copilot-bar" id="copilot-bar" style="background: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 10px 16px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Copilot Assistant
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-sm btn-secondary" id="copilot-suggest-btn" style="font-size: 0.75rem; padding: 4px 10px;">
+                                    <i class="fa-solid fa-sparkles"></i> Suggest Reply
+                                </button>
+                                <button type="button" class="btn-sm btn-secondary" id="copilot-followup-btn" style="font-size: 0.75rem; padding: 4px 10px;">
+                                    <i class="fa-solid fa-calendar-plus"></i> Auto Follow-up
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Copilot Suggestion Container (Hidden until requested) -->
+                        <div class="copilot-suggestion-card" id="copilot-suggestion-card" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px dashed var(--color-primary); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="font-weight: 600; color: var(--color-primary); font-size: 0.8rem;">AI Suggested Response</span>
+                                <div style="display: flex; gap: 4px;">
+                                    <button type="button" class="btn-icon-xs" id="copilot-apply-btn" title="Use in Chat"><i class="fa-solid fa-turn-down-left"></i> Apply</button>
+                                    <button type="button" class="btn-icon-xs" id="copilot-regen-btn" title="Regenerate"><i class="fa-solid fa-arrows-rotate"></i></button>
+                                    <button type="button" class="btn-icon-xs" id="copilot-copy-btn" title="Copy Text"><i class="fa-regular fa-copy"></i></button>
+                                    <button type="button" class="btn-icon-xs" id="copilot-close-btn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                            <div id="copilot-suggestion-text" style="color: var(--text-color); line-height: 1.4; white-space: pre-wrap;"></div>
+                        </div>
+                    </div>
+
                     <!-- Chat Footer / Input area -->
                     <form class="chat-input-area" id="chat-form">
                         <div class="input-actions-left">
@@ -213,7 +244,7 @@
                     </form>
                 </section>
 
-                <!-- COLUMN 3: CUSTOMER DETAILS (RIGHT PANEL) -->
+                <!-- COLUMN 3: CUSTOMER DETAILS & AI INTELLIGENCE (RIGHT PANEL) -->
                 <section class="panel-right">
                     <!-- Profile Card -->
                     <div class="profile-card">
@@ -223,6 +254,50 @@
                         <div class="lead-badges">
                             <span class="badge-status" id="details-status">New</span>
                             <span class="badge-score" id="details-score">Score: 10</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Sales Intelligence Panel (NEW) -->
+                    <div class="details-section" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 16px;">
+                        <h4 class="details-section-title" style="color: var(--color-primary); display: flex; align-items: center; justify-content: space-between;">
+                            <span><i class="fa-solid fa-brain" style="margin-right: 6px;"></i> Lead Intelligence</span>
+                            <button class="btn-icon-xs" id="refresh-insights-btn" title="Analyze Intent & Score"><i class="fa-solid fa-arrows-rotate"></i></button>
+                        </h4>
+                        
+                        <!-- Customer Intent & Sentiment -->
+                        <div class="detail-row" style="margin-top: 8px;">
+                            <span class="detail-label">Intent</span>
+                            <span class="detail-val font-semibold" id="details-intent">General Inquiry</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Sentiment</span>
+                            <span class="detail-val" id="details-sentiment">Neutral</span>
+                        </div>
+
+                        <!-- Opportunity Tags -->
+                        <div style="margin-top: 10px;">
+                            <span class="detail-label" style="display: block; margin-bottom: 4px;">Opportunity Tags</span>
+                            <div id="details-opp-tags" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <span class="tag-badge">New Lead</span>
+                            </div>
+                        </div>
+
+                        <!-- Next Best Action -->
+                        <div style="margin-top: 10px; background: var(--panel-bg); border-radius: 8px; padding: 10px; border-left: 3px solid var(--color-primary);">
+                            <span class="detail-label" style="font-weight: 600; color: var(--color-primary); display: block; margin-bottom: 4px;">
+                                <i class="fa-solid fa-compass"></i> Next Best Action
+                            </span>
+                            <div id="details-next-action" style="font-size: 0.82rem; color: var(--text-color); line-height: 1.3;">
+                                Qualify lead requirements and confirm target order size.
+                            </div>
+                        </div>
+
+                        <!-- Lead Score Explanation -->
+                        <div style="margin-top: 10px;">
+                            <span class="detail-label" style="display: block; margin-bottom: 4px;">Score Reasons</span>
+                            <ul id="details-score-reasons" style="font-size: 0.8rem; color: var(--text-muted); padding-left: 18px; margin: 0;">
+                                <li>Inquiry received</li>
+                            </ul>
                         </div>
                     </div>
 

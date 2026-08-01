@@ -173,6 +173,57 @@ function setupEventListeners() {
         });
     }
 
+    // AI Copilot Suggestion Handlers
+    const copilotSuggestBtn = document.getElementById('copilot-suggest-btn');
+    if (copilotSuggestBtn) {
+        copilotSuggestBtn.addEventListener('click', fetchCopilotSuggestion);
+    }
+
+    const copilotApplyBtn = document.getElementById('copilot-apply-btn');
+    if (copilotApplyBtn) {
+        copilotApplyBtn.addEventListener('click', () => {
+            const suggestion = document.getElementById('copilot-suggestion-text').innerText;
+            if (suggestion && chatInput) {
+                chatInput.value = suggestion;
+                chatInput.focus();
+                showToast("AI suggestion inserted into chat!");
+            }
+        });
+    }
+
+    const copilotCopyBtn = document.getElementById('copilot-copy-btn');
+    if (copilotCopyBtn) {
+        copilotCopyBtn.addEventListener('click', () => {
+            const suggestion = document.getElementById('copilot-suggestion-text').innerText;
+            if (suggestion) {
+                navigator.clipboard.writeText(suggestion);
+                showToast("Copied to clipboard!");
+            }
+        });
+    }
+
+    const copilotRegenBtn = document.getElementById('copilot-regen-btn');
+    if (copilotRegenBtn) {
+        copilotRegenBtn.addEventListener('click', fetchCopilotSuggestion);
+    }
+
+    const copilotCloseBtn = document.getElementById('copilot-close-btn');
+    if (copilotCloseBtn) {
+        copilotCloseBtn.addEventListener('click', () => {
+            document.getElementById('copilot-suggestion-card').style.display = 'none';
+        });
+    }
+
+    const refreshInsightsBtn = document.getElementById('refresh-insights-btn');
+    if (refreshInsightsBtn) {
+        refreshInsightsBtn.addEventListener('click', () => {
+            if (selectedCustomerId) {
+                fetchLeadIntelligence(selectedCustomerId);
+                showToast("Lead Intelligence refreshed!");
+            }
+        });
+    }
+
     // Quick Action button demo alerts
     document.getElementById('action-catalogue').addEventListener('click', () => showToast("Catalogue shared with customer"));
     document.getElementById('action-quotation').addEventListener('click', () => showToast("Quotation sent to email"));
@@ -758,6 +809,89 @@ function updateRightPanel(customer) {
         detailsSummary.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-spark"></i> ${customer.ai_summary}`;
     } else {
         detailsSummary.innerText = "Awaiting customer profile details to generate AI summary.";
+    }
+
+    // Fetch AI Lead Intelligence
+    fetchLeadIntelligence(customer.id);
+}
+
+// Fetch AI Lead Intelligence Insights
+async function fetchLeadIntelligence(customerId) {
+    const intentEl = document.getElementById('details-intent');
+    const sentEl = document.getElementById('details-sentiment');
+    const tagsEl = document.getElementById('details-opp-tags');
+    const nextActionEl = document.getElementById('details-next-action');
+    const reasonsEl = document.getElementById('details-score-reasons');
+
+    if (!intentEl) return;
+
+    try {
+        // 1. Get conversation ID
+        const convRes = await fetch(`/conversations/by-customer/${customerId}`);
+        if (!convRes.ok) return;
+        const convData = await convRes.json();
+        const convId = convData.conversation_id;
+
+        // 2. Get AI Insights
+        const insightsRes = await fetch(`/api/conversations/${convId}/ai-insights`);
+        if (!insightsRes.ok) return;
+        const insights = await insightsRes.json();
+
+        // Update UI
+        if (intentEl) intentEl.innerText = insights.detected_intent || 'General Inquiry';
+        if (sentEl) sentEl.innerText = insights.sentiment || 'Neutral';
+        if (nextActionEl) nextActionEl.innerText = insights.next_best_action || 'Qualify lead requirements.';
+
+        if (tagsEl && insights.opportunity_tags) {
+            tagsEl.innerHTML = insights.opportunity_tags.map(t => `<span class="tag-badge">${t}</span>`).join('');
+        }
+
+        if (reasonsEl && insights.score_reasons) {
+            reasonsEl.innerHTML = insights.score_reasons.map(r => `<li>${r}</li>`).join('');
+        }
+
+    } catch (e) {
+        console.error("Error fetching AI Insights:", e);
+    }
+}
+
+// Fetch Copilot Suggestion
+async function fetchCopilotSuggestion() {
+    if (!selectedCustomerId) {
+        showToast("Please select a conversation first", "error");
+        return;
+    }
+
+    const card = document.getElementById('copilot-suggestion-card');
+    const textEl = document.getElementById('copilot-suggestion-text');
+    const suggestBtn = document.getElementById('copilot-suggest-btn');
+
+    if (suggestBtn) {
+        suggestBtn.disabled = true;
+        suggestBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+    }
+
+    try {
+        const convRes = await fetch(`/conversations/by-customer/${selectedCustomerId}`);
+        if (!convRes.ok) throw new Error("No conversation found");
+        const convData = await convRes.json();
+
+        const res = await fetch(`/api/conversations/${convData.conversation_id}/copilot-suggest`, { method: 'POST' });
+        if (!res.ok) throw new Error("Failed to generate AI suggestion");
+        const data = await res.json();
+
+        textEl.innerText = data.suggested_reply;
+        card.style.display = 'block';
+        showToast("AI suggestion ready!");
+
+    } catch (e) {
+        console.error(e);
+        showToast("Error generating AI suggestion", "error");
+    } finally {
+        if (suggestBtn) {
+            suggestBtn.disabled = false;
+            suggestBtn.innerHTML = '<i class="fa-solid fa-sparkles"></i> Suggest Reply';
+        }
     }
 }
 
