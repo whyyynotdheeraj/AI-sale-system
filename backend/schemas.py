@@ -238,3 +238,57 @@ class SignupRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: str
+
+# ── 12-Module AI Schemas ─────────────────────────────────────
+
+class CompanyBrainUpdate(BaseModel):
+    moq_info: Optional[str] = None
+    pricing_tiers: Optional[str] = None
+    shipping_policy: Optional[str] = None
+    payment_terms: Optional[str] = None
+    return_policy: Optional[str] = None
+    gst_number: Optional[str] = None
+    location: Optional[str] = None
+    owner_sales_strategy: Optional[str] = None
+    catalog_summary: Optional[str] = None
+
+class KnowledgeDocumentUploadRequest(BaseModel):
+    filename: str
+    content_text: str
+    category: Optional[str] = "Catalog/Policy"
+
+class AITelemetryLogResponse(BaseModel):
+    id: int
+    company_id: int
+    request_type: str
+    provider: str
+    model: str
+    latency_ms: int
+    input_tokens: int
+    output_tokens: int
+    estimated_cost: float
+    success: bool
+    fallback_used: bool
+    created_at: str
+    class Config:
+        from_attributes = True
+
+class AIInsightsResponse(BaseModel):
+    lead_score: int
+    score_reasons: List[str]
+    opportunity_tags: List[str]
+    detected_intent: Optional[str] = None
+    sentiment: Optional[str] = None
+    next_best_action: Optional[str] = None
+
+class WorkflowTaskResponse(BaseModel):
+    id: int
+    title: str
+    action_type: str
+    due_date: str
+    status: str
+    notes: Optional[str] = None
+    created_at: str
+    class Config:
+        from_attributes = True
+

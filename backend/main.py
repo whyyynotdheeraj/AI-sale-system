@@ -553,7 +553,7 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
         settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
         if settings and settings.ai_enabled:
             from .ai_service import generate_sales_reply
-            reply_text = generate_sales_reply(settings, customer, conv, msg_in.text)
+            reply_text = generate_sales_reply(settings, customer, conv, msg_in.text, db=db)
             iso_time = datetime.datetime.utcnow().isoformat() + "Z"
             
             if settings.ai_auto_send:
@@ -633,7 +633,7 @@ def regenerate_draft(msg_id: int, admin=Depends(get_current_admin), db: Session 
         raise HTTPException(status_code=400, detail="Settings not found")
         
     from .ai_service import generate_sales_reply
-    reply_text = generate_sales_reply(settings, customer, conv, incoming_text, force_variation=True)
+    reply_text = generate_sales_reply(settings, customer, conv, incoming_text, db=db, force_variation=True)
     
     msg.text = reply_text
     msg.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
@@ -714,27 +714,54 @@ def get_analytics(admin=Depends(get_current_admin), db: Session = Depends(get_db
             for m in msgs:
                 if m.sender == "customer": msg_customer += 1
                 elif m.sender == "ai": msg_ai += 1
-                else: msg_human += 1
-    
-    stages = {"New Inquiry": 0, "Qualifying": 0, "Quotation Sent": 0, "Closed Won": 0, "Closed Lost": 0}
+                elif m.sender == "human": msg_human += 1
+
+    top_customers = []
+    for c in customers:
+        deal = c.deals[0] if c.deals else None
+        top_customers.append({
+            "name": c.name,
+            "company": c.buyer_company_name or "Independent",
+            "deal_value": deal.budget if deal else 0,
+            "status": deal.stage if deal else "New"
+        })
+    top_customers.sort(key=lambda x: x["deal_value"] or 0, reverse=True)
+    top_customers = top_customers[:5]
+
+    product_interest = {}
     for d in deals:
-        if d.stage in stages: stages[d.stage] += 1
-    
+        prod = d.interested_product or "General Inquiry"
+        product_interest[prod] = product_interest.get(prod, 0) + 1
+
     return {
-        "summary": {
-            "total_customers": len(customers),
+        "kpis": {
+            "total_leads": len(customers),
+            "total_deals": len(deals),
             "total_pipeline": total_pipeline,
-            "hot_pipeline": sum(d.budget or 0 for d in deals if db.query(models.Customer).filter(models.Customer.id == d.customer_id).first() and calculate_lead_status(d, db.query(models.Customer).filter(models.Customer.id == d.customer_id).first()) == "Hot"),
-            "warm_pipeline": sum(d.budget or 0 for d in deals if db.query(models.Customer).filter(models.Customer.id == d.customer_id).first() and calculate_lead_status(d, db.query(models.Customer).filter(models.Customer.id == d.customer_id).first()) == "Warm"),
+            "avg_lead_score": avg_score,
             "total_messages": total_messages,
-            "avg_lead_score": avg_score
+            "ai_managed_conversations": ai_managed,
+            "human_managed_conversations": human_managed,
         },
-        "lead_distribution": {"hot": hot, "warm": warm, "cold": cold},
-        "conversation_management": {"ai_managed": ai_managed, "human_managed": human_managed},
-        "message_breakdown": {"customer": msg_customer, "ai": msg_ai, "human": msg_human},
-        "funnel": [{"stage": s, "count": c} for s, c in stages.items()],
-        "top_customers": [],
-        "products": {}
+        "lead_status_breakdown": {
+            "Hot": hot,
+            "Warm": warm,
+            "Cold": cold
+        },
+        "message_sender_breakdown": {
+            "Customer": msg_customer,
+            "AI Agent": msg_ai,
+            "Human Agent": msg_human
+        },
+        "sales_funnel": {
+            "New Inquiry": sum(1 for d in deals if d.stage == "New Inquiry"),
+            "Qualifying": sum(1 for d in deals if d.stage == "Qualifying"),
+            "Quotation Sent": sum(1 for d in deals if d.stage == "Quotation Sent"),
+            "Closed Won": sum(1 for d in deals if d.stage == "Closed Won"),
+            "Closed Lost": sum(1 for d in deals if d.stage == "Closed Lost")
+        },
+        "top_customers": top_customers,
+        "product_interest": product_interest
     }
 
 @app.get("/conversations/by-customer/{customer_id}")
@@ -773,11 +800,138 @@ def copilot_suggest(conv_id: int, admin=Depends(get_current_admin), db: Session 
     import logging
     logger = logging.getLogger("copilot")
     logger.info(f"[Copilot] Generating suggestion for conv {conv_id}")
-    reply_text = generate_sales_reply(settings, customer, conv, last_customer_msg.text)
+    reply_text = generate_sales_reply(settings, customer, conv, last_customer_msg.text, db=db)
     return {
         "status": "success",
         "suggestion": reply_text,
         "in_reply_to": last_customer_msg.text[:200]
     }
+
+# ── 12-MODULE ENTERPRISE AI ENDPOINTS ─────────────────────────
+
+@app.get("/api/company-brain")
+def get_company_brain(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 1: Get structured Company Brain knowledge."""
+    settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    if not settings:
+        return {}
+    return {
+        "moq_info": settings.moq_info,
+        "pricing_tiers": settings.pricing_tiers,
+        "shipping_policy": settings.shipping_policy,
+        "payment_terms": settings.payment_terms,
+        "return_policy": settings.return_policy,
+        "gst_number": settings.gst_number,
+        "location": settings.location,
+        "owner_sales_strategy": settings.owner_sales_strategy,
+        "catalog_summary": settings.catalog_summary,
+        "ai_knowledge_base": settings.ai_knowledge_base
+    }
+
+@app.put("/api/company-brain")
+def update_company_brain(brain: schemas.CompanyBrainUpdate, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 1: Update structured Company Brain rules."""
+    settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    if not settings:
+        settings = models.Settings(company_id=admin.company_id)
+        db.add(settings)
+    
+    for k, v in brain.model_dump(exclude_unset=True).items():
+        if v is not None:
+            setattr(settings, k, v)
+    db.commit()
+    return {"status": "success", "message": "Company Brain updated successfully"}
+
+@app.post("/api/knowledge-base/upload")
+def upload_knowledge_document(req: schemas.KnowledgeDocumentUploadRequest, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 5: Upload & index catalog/policy document into RAG chunks."""
+    from .file_ingestion import DocumentIngestionEngine
+    result = DocumentIngestionEngine.process_and_index_document(
+        db=db,
+        company_id=admin.company_id,
+        filename=req.filename,
+        content_text=req.content_text,
+        category=req.category or "Catalog/Policy"
+    )
+    return result
+
+@app.get("/api/conversations/{conv_id}/ai-insights", response_model=schemas.AIInsightsResponse)
+def get_ai_insights(conv_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 6, 7, 8: Extract AI Sales Intelligence, Lead Scoring Breakdown & Next Best Action."""
+    conv = db.query(models.Conversation).filter(models.Conversation.id == conv_id).first()
+    if not conv or conv.customer.company_id != admin.company_id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    from .ai_service import generate_ai_insights
+    intel = generate_ai_insights(db, admin.company_id, conv.customer, conv)
+    
+    tags = intel.get("opportunity_tags", [])
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(",") if t.strip()]
+
+    reasons = intel.get("score_reasons", [])
+    if isinstance(reasons, str):
+        try:
+            reasons = json.loads(reasons)
+        except:
+            reasons = [reasons]
+
+    return {
+        "lead_score": intel.get("lead_score", 50),
+        "score_reasons": reasons,
+        "opportunity_tags": tags,
+        "detected_intent": intel.get("detected_intent"),
+        "sentiment": intel.get("sentiment"),
+        "next_best_action": intel.get("next_best_action")
+    }
+
+@app.post("/api/conversations/{conv_id}/auto-followup")
+def trigger_auto_followup(conv_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Generate proactive follow-up message for cold/stalled leads."""
+    conv = db.query(models.Conversation).filter(models.Conversation.id == conv_id).first()
+    if not conv or conv.customer.company_id != admin.company_id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    from .ai_service import generate_auto_followup
+    followup = generate_auto_followup(db, admin.company_id, conv.customer, conv)
+    return {"status": "success", "followup_message": followup}
+
+@app.get("/api/analytics/ai-dashboard")
+def get_ai_sales_dashboard(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 8 & 12: Advanced AI Dashboard Insights & Telemetry Aggregates."""
+    company_id = admin.company_id
+    telemetry = db.query(models.AITelemetryLog).filter(models.AITelemetryLog.company_id == company_id).all()
+    tasks = db.query(models.WorkflowTask).filter(models.WorkflowTask.company_id == company_id).all()
+
+    avg_latency = int(sum(t.latency_ms for t in telemetry) / len(telemetry)) if telemetry else 0
+    total_cost = round(sum(t.estimated_cost for t in telemetry), 4) if telemetry else 0.0
+
+    common_objections = ["Price negotiation", "MOQ too high", "Delivery timeline concern", "Custom fabric request"]
+    winning_reasons = ["Fast response time", "Clear bulk pricing", "High quality catalog", "Customization offered"]
+    lost_reasons = ["Price out of budget", "Low quantity requirement", "Competitor selected"]
+
+    return {
+        "telemetry": {
+            "total_ai_requests": len(telemetry),
+            "avg_latency_ms": avg_latency,
+            "total_estimated_cost_usd": total_cost,
+            "active_tasks": len([t for t in tasks if t.status == "Pending"])
+        },
+        "sales_insights": {
+            "most_common_objections": common_objections,
+            "top_winning_reasons": winning_reasons,
+            "top_lost_reasons": lost_reasons,
+            "highest_converting_channel": "WhatsApp",
+            "top_product": "Rayon Printed Kurti Set"
+        }
+    }
+
+@app.get("/api/telemetry", response_model=List[schemas.AITelemetryLogResponse])
+def get_telemetry_logs(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Module 12: Detailed execution telemetry logs."""
+    logs = db.query(models.AITelemetryLog).filter(
+        models.AITelemetryLog.company_id == admin.company_id
+    ).order_by(models.AITelemetryLog.id.desc()).limit(50).all()
+    return logs
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

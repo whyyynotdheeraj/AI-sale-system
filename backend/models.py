@@ -57,6 +57,11 @@ class Deal(Base):
     budget = Column(Float, nullable=True)
     stage = Column(String, default="New Inquiry") # New Inquiry, Qualifying, Quotation Sent, Closed Won, Closed Lost
     lead_score = Column(Integer, default=10)
+    lead_score_reasons = Column(Text, nullable=True) # JSON list of reasons
+    opportunity_tags = Column(String, nullable=True) # E.g. "Upsell, Bulk Order, High Value"
+    detected_intent = Column(String, nullable=True)
+    sentiment = Column(String, nullable=True)
+    next_best_action = Column(Text, nullable=True)
     ai_summary = Column(Text, nullable=True)
 
     company = relationship("Company", back_populates="deals")
@@ -86,7 +91,7 @@ class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
-    sender = Column(String)  # customer, ai, human
+    sender = Column(String)  # customer, ai, human, ai_draft
     text = Column(Text)
     timestamp = Column(String)
     email_message_id = Column(String, nullable=True)  # For email dedup
@@ -112,12 +117,15 @@ class Settings(Base):
     language = Column(String, default="English")
     currency = Column(String, default="USD")
     
-    # AI Settings
+    # AI Settings & Provider Config
     ai_enabled = Column(Boolean, default=True)
     ai_auto_send = Column(Boolean, default=False)
     greeting_message = Column(String, default="Hello! Thank you for contacting us. How can I help you today?")
     ai_reply_delay = Column(Integer, default=1)  # seconds
     max_followups = Column(Integer, default=3)
+    ai_provider = Column(String, default="gemini") # gemini, openai, anthropic, groq, openrouter
+    ai_model = Column(String, default="gemini-2.0-flash")
+    prompt_version = Column(String, default="V2") # V1, V2, V3
     
     # Notifications
     desktop_notifications = Column(Boolean, default=True)
@@ -130,8 +138,17 @@ class Settings(Base):
     primary_color = Column(String, default="#6366f1")
     font_size = Column(String, default="medium")  # small, medium, large
 
-    # AI Knowledge Base
-    ai_knowledge_base = Column(Text, nullable=True)  # Detailed business info for AI context
+    # AI Knowledge Base & Company Brain (Module 1)
+    ai_knowledge_base = Column(Text, nullable=True)
+    moq_info = Column(String, nullable=True) # E.g. "50 pcs per color/style"
+    pricing_tiers = Column(Text, nullable=True) # E.g. JSON/Text of bulk volume discounts
+    shipping_policy = Column(Text, nullable=True)
+    payment_terms = Column(Text, nullable=True) # E.g. "50% advance, 50% on dispatch"
+    return_policy = Column(Text, nullable=True)
+    gst_number = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    owner_sales_strategy = Column(Text, nullable=True)
+    catalog_summary = Column(Text, nullable=True)
 
     # Integrations
     gmail_address = Column(String, nullable=True)
@@ -154,3 +171,55 @@ class TeamMember(Base):
     created_at = Column(String, nullable=True)
 
     company = relationship("Company", back_populates="team_members")
+
+# Module 2 & 5: Company Knowledge Chunks for RAG & File Ingestion
+class CompanyKnowledgeChunk(Base):
+    __tablename__ = "company_knowledge_chunks"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+    title = Column(String)
+    category = Column(String, default="General") # FAQ, Pricing, Product, Policy, File
+    content = Column(Text)
+    source_filename = Column(String, nullable=True)
+    created_at = Column(String)
+
+# Module 4: Long-Term Customer Memory
+class CustomerLongTermMemory(Base):
+    __tablename__ = "customer_memories"
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"))
+    key = Column(String) # E.g. "preferred_fabric", "past_inquiry_date", "budget_tier"
+    value = Column(Text)
+    created_at = Column(String)
+    updated_at = Column(String)
+
+# Module 9: Workflow Automated Tasks
+class WorkflowTask(Base):
+    __tablename__ = "workflow_tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+    customer_id = Column(Integer, ForeignKey("customers.id"))
+    deal_id = Column(Integer, ForeignKey("deals.id"), nullable=True)
+    title = Column(String)
+    action_type = Column(String) # Reminder, Email_Followup, WhatsApp_Followup, Task
+    due_date = Column(String)
+    status = Column(String, default="Pending") # Pending, Completed, Cancelled
+    notes = Column(Text, nullable=True)
+    created_at = Column(String)
+
+# Module 12: AI Telemetry & Token Analytics Logs
+class AITelemetryLog(Base):
+    __tablename__ = "ai_telemetry_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+    request_type = Column(String) # Chat_Reply, Copilot_Suggest, Intent_Analysis, Followup_Gen, Summarize
+    provider = Column(String)
+    model = Column(String)
+    latency_ms = Column(Integer)
+    input_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+    estimated_cost = Column(Float, default=0.0)
+    success = Column(Boolean, default=True)
+    fallback_used = Column(Boolean, default=False)
+    created_at = Column(String)
+
