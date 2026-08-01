@@ -503,13 +503,18 @@ def get_messages(customer_id: int, admin=Depends(get_current_admin), db: Session
     ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    conv = db.query(models.Conversation).filter(models.Conversation.customer_id == customer_id).first()
+    # Use most recent conversation (not necessarily the first one)
+    conv = db.query(models.Conversation).filter(
+        models.Conversation.customer_id == customer_id
+    ).order_by(models.Conversation.id.desc()).first()
     if not conv:
         return []
     if conv.unread:
         conv.unread = False
         db.commit()
-    return db.query(models.Message).filter(models.Message.conversation_id == conv.id).order_by(models.Message.id.asc()).all()
+    return db.query(models.Message).filter(
+        models.Message.conversation_id == conv.id
+    ).order_by(models.Message.id.asc()).all()
 
 @app.post("/messages")
 def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
@@ -520,7 +525,10 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
     ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    conv = db.query(models.Conversation).filter(models.Conversation.customer_id == msg_in.customer_id).first()
+    # Use most recent conversation (may be email, chat, etc.)
+    conv = db.query(models.Conversation).filter(
+        models.Conversation.customer_id == msg_in.customer_id
+    ).order_by(models.Conversation.id.desc()).first()
     if not conv:
         conv = models.Conversation(customer_id=msg_in.customer_id)
         db.add(conv)
@@ -773,7 +781,9 @@ def get_conversation_info(customer_id: int, admin=Depends(get_current_admin), db
     ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    conv = db.query(models.Conversation).filter(models.Conversation.customer_id == customer_id).first()
+    conv = db.query(models.Conversation).filter(
+        models.Conversation.customer_id == customer_id
+    ).order_by(models.Conversation.id.desc()).first()
     if not conv:
         raise HTTPException(status_code=404, detail="No conversation found")
     return {"conversation_id": conv.id, "channel": conv.channel, "status": conv.status}
