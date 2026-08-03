@@ -7,6 +7,7 @@ import email
 import hashlib
 from email.header import decode_header
 from email.message import EmailMessage
+from email.utils import parsedate_to_datetime
 import datetime
 import logging
 
@@ -113,18 +114,24 @@ class EmailIntegrationService:
             logger.info("[Email][IMAP] Login successful for %s", email_address)
             
             mail.select("INBOX")
-            # Search UNSEEN first, if 0 found, fall back to ALL (latest 50) so already-read emails are still imported
-            status, messages = mail.search(None, "UNSEEN")
-            email_ids = []
-            if status == "OK" and messages[0]:
-                email_ids = messages[0].split()
+            # Search UNSEEN to make sure we don't miss any new emails
+            status, unseen_res = mail.search(None, "UNSEEN")
+            unseen_ids = []
+            if status == "OK" and unseen_res[0]:
+                unseen_ids = unseen_res[0].split()
             
-            if not email_ids:
-                # Fallback to last 50 emails in INBOX
-                status, messages = mail.search(None, "ALL")
-                if status == "OK" and messages[0]:
-                    all_ids = messages[0].split()
-                    email_ids = all_ids[-50:]  # fetch latest 50
+            # Fetch last 100 emails in INBOX to capture past emails
+            status, all_res = mail.search(None, "ALL")
+            all_ids = []
+            if status == "OK" and all_res[0]:
+                all_ids = all_res[0].split()
+                
+            # Combine unseen and last 100 inbox emails, preserving order and removing duplicates
+            combined_set = set(unseen_ids)
+            email_ids = list(unseen_ids)
+            for eid in all_ids[-100:]:
+                if eid not in combined_set:
+                    email_ids.append(eid)
 
             if not email_ids:
                 logger.info("[Email][IMAP] No emails found for %s", email_address)
@@ -205,6 +212,18 @@ class EmailIntegrationService:
             logger.info("[Email][Parse] Skipping automated bot email: %s", sender_email)
             return False
 
+        # --- Date / Timestamp ---
+        email_date_str = msg.get("Date")
+        email_time = None
+        if email_date_str:
+            try:
+                dt = parsedate_to_datetime(email_date_str)
+                email_time = dt.astimezone(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+            except Exception:
+                pass
+        if not email_time:
+            email_time = datetime.datetime.utcnow().isoformat() + "Z"
+
         # --- Dedup Check: have we already stored this exact email? ---
         existing = db.query(models.Message).filter(
             models.Message.email_message_id == raw_message_id
@@ -235,11 +254,11 @@ class EmailIntegrationService:
 
         body = body.strip() or "(No message body)"
 
-        logger.info("[Email][Save] New email from %s, subject: '%s'", sender_email, subject[:60])
-        self._process_incoming_email(db, company_id, company_email, sender_email, sender_name or sender_email, subject, body, raw_message_id)
+        logger.info("[Email][Save] New email from %s, subject: '%s', date: %s", sender_email, subject[:60], email_time)
+        self._process_incoming_email(db, company_id, company_email, sender_email, sender_name or sender_email, subject, body, raw_message_id, email_time)
         return True
 
-    def _process_incoming_email(self, db, company_id, company_email, sender_email, sender_name, subject, body, message_id):
+    def _process_incoming_email(self, db, company_id, company_email, sender_email, sender_name, subject, body, message_id, email_time):
         try:
             # 1. Find or create Customer scoped to this company
             customer = db.query(models.Customer).filter(
@@ -287,7 +306,6 @@ class EmailIntegrationService:
                 db.refresh(conversation)
 
             # 3. Add the message with email_message_id for dedup
-            iso_time = datetime.datetime.utcnow().isoformat() + "Z"
             msg_count = db.query(models.Message).filter(
                 models.Message.conversation_id == conversation.id
             ).count()
@@ -298,23 +316,38 @@ class EmailIntegrationService:
                 conversation_id=conversation.id,
                 sender="customer",
                 text=full_text,
-                timestamp=iso_time,
+                timestamp=email_time,
                 email_message_id=message_id,
             )
             db.add(new_msg)
 
             conversation.unread = True
             conversation.last_message_text = full_text[:120] + ("..." if len(full_text) > 120 else "")
-            conversation.last_message_time = iso_time
+            conversation.last_message_time = email_time
             conversation.status = "Open"
             db.commit()
 
             self.emails_processed += 1
             logger.info("[Email][DB] Saved message from %s to DB (Company %d, Conv %d).", sender_email, company_id, conversation.id)
 
-            # 4. AI Auto-reply
+            # 4. AI Auto-reply (Only trigger auto-replies on newly received emails, not historical ones)
+            # If the email timestamp is older than 5 minutes, do not auto-reply.
+            email_datetime = None
+            try:
+                # ISO format parse
+                email_datetime = datetime.datetime.fromisoformat(email_time.replace("Z", "+00:00"))
+            except Exception:
+                pass
+                
+            is_recent = True
+            if email_datetime:
+                now_utc = datetime.datetime.now(datetime.timezone.utc)
+                if (now_utc - email_datetime).total_seconds() > 300: # 5 minutes
+                    is_recent = False
+                    logger.info("[Email][AI] Email is older than 5 mins (%s). Skipping auto-reply.", email_time)
+
             settings = db.query(models.Settings).filter(models.Settings.company_id == company_id).first()
-            if conversation.is_ai_managed and settings and settings.ai_enabled:
+            if conversation.is_ai_managed and settings and settings.ai_enabled and is_recent:
                 self._send_auto_reply(db, company_id, company_email, customer, conversation, subject, body, settings)
 
         except Exception as e:
