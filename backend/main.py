@@ -363,6 +363,15 @@ def trigger_email_fetch(admin=Depends(get_current_admin)):
     result = email_service.fetch_now(admin.company_id)
     return result
 
+@app.get("/integrations/email/status")
+def get_email_status(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
+    from .integrations.email.service import email_service
+    status = email_service.get_status()
+    settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+    status["gmail_configured"] = bool(settings and settings.gmail_address and settings.gmail_app_password)
+    status["gmail_address"] = settings.gmail_address if settings else None
+    return status
+
 @app.get("/team-members", response_model=List[schemas.TeamMemberResponse])
 def get_team_members(admin=Depends(get_current_admin), db: Session = Depends(get_db)):
     return db.query(models.TeamMember).filter(models.TeamMember.company_id == admin.company_id).all()
