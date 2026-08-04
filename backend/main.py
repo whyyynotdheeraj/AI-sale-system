@@ -831,7 +831,10 @@ def copilot_suggest(conv_id: int, admin=Depends(get_current_admin), db: Session 
         raise HTTPException(status_code=400, detail="No customer message found")
     settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
     if not settings:
-        raise HTTPException(status_code=400, detail="Settings not configured")
+        settings = models.Settings(company_id=admin.company_id, ai_model="gemini-flash-latest")
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
     from .ai_service import generate_sales_reply
     import logging
     logger = logging.getLogger("copilot")

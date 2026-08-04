@@ -63,7 +63,9 @@ def generate_sales_reply(
     biz_name = getattr(settings, 'business_name', None) or "our manufacturing company"
 
     provider_name = getattr(settings, 'ai_provider', 'gemini') or 'gemini'
-    model_name = getattr(settings, 'ai_model', 'gemini-2.0-flash') or 'gemini-2.0-flash'
+    model_name = getattr(settings, 'ai_model', 'gemini-flash-latest') or 'gemini-flash-latest'
+    if model_name in ['gemini-2.0-flash', 'gemini-1.5-flash']:
+        model_name = 'gemini-flash-latest'
     prompt_ver = getattr(settings, 'prompt_version', 'V2') or 'V2'
 
     # Module 1: Build Company Brain Prompt
