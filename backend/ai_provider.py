@@ -24,14 +24,30 @@ class BaseAIProvider(ABC):
         pass
 
 class GeminiProvider(BaseAIProvider):
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-flash-latest"):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.model = model
+        self.model = model or "gemini-flash-latest"
 
     def generate(self, system_instruction: str, contents: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 800) -> Dict[str, Any]:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is not set.")
 
+        models_to_try = [self.model, "gemini-flash-latest", "gemini-2.0-flash-lite", "gemini-2.0-flash"]
+        # Remove duplicates preserving order
+        seen = set()
+        models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
+
+        last_error = None
+        for m in models_to_try:
+            try:
+                return self._call_gemini_api(m, system_instruction, contents, temperature, max_tokens)
+            except Exception as e:
+                last_error = e
+                logger.warning(f"[GeminiProvider] Failed with model {m} ({e}), trying fallback...")
+
+        raise last_error
+
+    def _call_gemini_api(self, model_name: str, system_instruction: str, contents: List[Dict[str, str]], temperature: float, max_tokens: int) -> Dict[str, Any]:
         # Primary SDK path
         try:
             from google import genai
@@ -40,7 +56,7 @@ class GeminiProvider(BaseAIProvider):
             client = genai.Client(api_key=self.api_key)
             formatted_contents = []
             for item in contents:
-                role = "user" if item["role"] == "user" else "model"
+                role = "user" if item["role"] in ["user", "customer"] else "model"
                 formatted_contents.append(
                     types.Content(role=role, parts=[types.Part.from_text(text=item["text"])])
                 )
@@ -51,7 +67,7 @@ class GeminiProvider(BaseAIProvider):
                 max_output_tokens=max_tokens
             )
             response = client.models.generate_content(
-                model=self.model,
+                model=model_name,
                 contents=formatted_contents,
                 config=config
             )
@@ -61,14 +77,15 @@ class GeminiProvider(BaseAIProvider):
                 "input_tokens": len(system_instruction.split()) * 2,
                 "output_tokens": len(text.split()) * 2,
                 "provider": "Gemini",
-                "model": self.model
+                "model": model_name
             }
         except Exception as e:
-            logger.warning(f"[GeminiProvider] SDK call failed ({e}), trying REST fallback...")
-            return self._rest_fallback(system_instruction, contents, temperature, max_tokens)
+            logger.warning(f"[GeminiProvider] SDK call failed for {model_name} ({e}), trying REST fallback...")
+            return self._rest_fallback(model_name, system_instruction, contents, temperature, max_tokens)
 
-    def _rest_fallback(self, system_instruction: str, contents: List[Dict[str, str]], temperature: float, max_tokens: int) -> Dict[str, Any]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+    def _rest_fallback(self, model_name: str, system_instruction: str, contents: List[Dict[str, str]], temperature: float, max_tokens: int) -> Dict[str, Any]:
+        clean_model = model_name if model_name.startswith("models/") else f"models/{model_name}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/{clean_model}:generateContent?key={self.api_key}"
         parts = [{"text": f"System Instruction:\n{system_instruction}\n\n"}]
         for item in contents:
             parts.append({"text": f"{item['role'].upper()}: {item['text']}\n"})
@@ -91,7 +108,7 @@ class GeminiProvider(BaseAIProvider):
                 "input_tokens": 300,
                 "output_tokens": len(text.split()) * 2,
                 "provider": "Gemini-REST",
-                "model": self.model
+                "model": model_name
             }
 
 class OpenAIProvider(BaseAIProvider):

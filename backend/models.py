@@ -124,7 +124,7 @@ class Settings(Base):
     ai_reply_delay = Column(Integer, default=1)  # seconds
     max_followups = Column(Integer, default=3)
     ai_provider = Column(String, default="gemini") # gemini, openai, anthropic, groq, openrouter
-    ai_model = Column(String, default="gemini-2.0-flash")
+    ai_model = Column(String, default="gemini-flash-latest")
     prompt_version = Column(String, default="V2") # V1, V2, V3
     
     # Notifications
