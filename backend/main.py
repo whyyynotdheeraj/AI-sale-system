@@ -559,13 +559,19 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
 
     if msg_in.sender == "human":
         conv.is_ai_managed = False
-        if conv.channel == "Email" and not msg_in.simulation_mode:
-            subject = "Re: Inquiry"
-            if conv.deal and conv.deal.interested_product:
-                subject = f"Re: {conv.deal.interested_product}"
-            success = email_service.send_email(db, admin.company_id, customer.email, subject, msg_in.text)
-            if not success:
-                logger.error(f"[Email] Failed to send manual reply to {customer.email}")
+        if not msg_in.simulation_mode:
+            if conv.channel == "Email":
+                subject = "Re: Inquiry"
+                if conv.deal and conv.deal.interested_product:
+                    subject = f"Re: {conv.deal.interested_product}"
+                success = email_service.send_email(db, admin.company_id, customer.email, subject, msg_in.text)
+                if not success:
+                    logger.error(f"[Email] Failed to send manual reply to {customer.email}")
+            elif conv.channel == "WhatsApp":
+                settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+                if settings:
+                    from .integrations.whatsapp.service import whatsapp_service
+                    whatsapp_service.send_whatsapp_message(db, settings, customer.phone, msg_in.text)
     elif msg_in.sender == "customer" and conv.is_ai_managed:
         settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
         if settings and settings.ai_enabled:
@@ -592,10 +598,14 @@ def send_message(msg_in: schemas.MessageCreate, admin=Depends(get_current_admin)
                     "timestamp": iso_time
                 }
                 
-                # If we are NOT in simulation, send the actual email!
-                if conv.channel == "Email" and not msg_in.simulation_mode:
-                    subject = f"Re: {conv.deal.interested_product}" if (conv.deal and conv.deal.interested_product) else "Re: Inquiry"
-                    email_service.send_email(db, admin.company_id, customer.email, subject, reply_text)
+                # If we are NOT in simulation, send the actual email or WhatsApp!
+                if not msg_in.simulation_mode:
+                    if conv.channel == "Email":
+                        subject = f"Re: {conv.deal.interested_product}" if (conv.deal and conv.deal.interested_product) else "Re: Inquiry"
+                        email_service.send_email(db, admin.company_id, customer.email, subject, reply_text)
+                    elif conv.channel == "WhatsApp":
+                        from .integrations.whatsapp.service import whatsapp_service
+                        whatsapp_service.send_whatsapp_message(db, settings, customer.phone, reply_text)
             else:
                 # Option B: Draft mode
                 ai_draft = models.Message(
@@ -669,21 +679,28 @@ def approve_message(msg_id: int, admin=Depends(get_current_admin), db: Session =
     if customer.company_id != admin.company_id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    # Send email
-    subject = "Re: Inquiry"
-    if conv.deal and conv.deal.interested_product:
-        subject = f"Re: {conv.deal.interested_product}"
-        
-    success = email_service.send_email(db, admin.company_id, customer.email, subject, msg.text)
+    # Send actual email or WhatsApp message
+    success = False
+    if conv.channel == "Email":
+        subject = "Re: Inquiry"
+        if conv.deal and conv.deal.interested_product:
+            subject = f"Re: {conv.deal.interested_product}"
+        success = email_service.send_email(db, admin.company_id, customer.email, subject, msg.text)
+    elif conv.channel == "WhatsApp":
+        settings = db.query(models.Settings).filter(models.Settings.company_id == admin.company_id).first()
+        if settings:
+            from .integrations.whatsapp.service import whatsapp_service
+            success = whatsapp_service.send_whatsapp_message(db, settings, customer.phone, msg.text)
+            
     if success:
         msg.sender = "ai"
         msg.timestamp = datetime.datetime.utcnow().isoformat() + "Z"
         conv.status = "Replied"
         conv.last_message_time = msg.timestamp
         db.commit()
-        return {"status": "success", "message": "Email sent"}
+        return {"status": "success", "message": "Message sent"}
     else:
-        raise HTTPException(status_code=500, detail="Failed to send email")
+        raise HTTPException(status_code=500, detail="Failed to send message")
 
 @app.post("/messages/{msg_id}/discard")
 def discard_message(msg_id: int, admin=Depends(get_current_admin), db: Session = Depends(get_db)):
