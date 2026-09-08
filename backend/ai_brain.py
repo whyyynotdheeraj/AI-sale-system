@@ -54,8 +54,8 @@ class RAGEngine:
     Searches company knowledge chunks for exact evidence before generating responses.
     """
     @staticmethod
-    def retrieve_relevant_chunks(db: Session, company_id: int, query_text: str, top_k: int = 3) -> str:
-        if not query_text or not db:
+    def retrieve_relevant_chunks(db: Session, company_id: int, query_text: str, top_k: int = 4) -> str:
+        if not db:
             return ""
 
         chunks = db.query(models.CompanyKnowledgeChunk).filter(
@@ -65,23 +65,56 @@ class RAGEngine:
         if not chunks:
             return ""
 
-        query_words = set(query_text.lower().split())
+        if not query_text:
+            # If no query text, return the first 3 chunks as general context
+            result = "== RELEVANT KNOWLEDGE BASE EVIDENCE (LOCAL RAG) ==\n"
+            for chunk in chunks[:top_k]:
+                result += f"[{chunk.category.upper()}] {chunk.title}:\n{chunk.content}\n\n"
+            return result.strip()
+
+        # Keyword normalization & synonym map for sales inquiries (Hinglish/English)
+        query_lower = query_text.lower()
+        query_words = set(w.strip("?,.!\"'") for w in query_lower.split())
+
+        # Expanded synonym clusters
+        synonyms = {
+            "moq": ["minimum", "quantity", "pieces", "pcs", "order", "kitna", "kam", "least"],
+            "price": ["pricing", "cost", "rate", "discount", "price", "kya", "kitne", "bulk"],
+            "ship": ["shipping", "delivery", "dispatch", "courier", "kab", "tak", "pahunchega", "transport"],
+            "pay": ["payment", "advance", "deposit", "bank", "account", "upi", "cod", "credit"],
+            "return": ["replace", "refund", "defect", "damage", "wapas", "exchange"],
+            "catalog": ["product", "item", "fabric", "material", "design", "kurti", "shirt", "pant", "saree"],
+        }
+
+        # Expand query words with synonyms
+        expanded_query = set(query_words)
+        for q_word in list(query_words):
+            for key, syn_list in synonyms.items():
+                if q_word == key or q_word in syn_list:
+                    expanded_query.update(syn_list)
 
         scored_chunks = []
         for chunk in chunks:
-            content_lower = (chunk.title + " " + chunk.content).lower()
-            score = sum(1 for word in query_words if len(word) > 3 and word in content_lower)
+            content_lower = (chunk.title + " " + chunk.content + " " + (chunk.category or "")).lower()
+            
+            # Score based on exact word matches + expanded synonyms
+            score = 0
+            for word in expanded_query:
+                if len(word) >= 2 and word in content_lower:
+                    score += 2 if word in query_words else 1
+
             if score > 0:
                 scored_chunks.append((score, chunk))
 
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
-        top_chunks = scored_chunks[:top_k]
+        top_chunks = [c for _, c in scored_chunks[:top_k]]
 
-        if not top_chunks:
-            return ""
+        # Fallback: If no specific chunk scored above 0, return the most recent chunks
+        if not top_chunks and chunks:
+            top_chunks = chunks[:top_k]
 
         result = "== RELEVANT KNOWLEDGE BASE EVIDENCE (LOCAL RAG) ==\n"
-        for _, chunk in top_chunks:
+        for chunk in top_chunks:
             result += f"[{chunk.category.upper()}] {chunk.title}:\n{chunk.content}\n\n"
 
         logger.info(f"[RAGEngine] Retrieved {len(top_chunks)} relevant knowledge chunks for query: '{query_text[:40]}...'")
