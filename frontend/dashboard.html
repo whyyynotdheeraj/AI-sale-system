@@ -30,7 +30,10 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon"><i class="fa-solid fa-bolt"></i></span>
-                    <span class="logo-text">AI Sale OS</span>
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <span class="logo-text" id="app-logo-title" style="font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em;">AI Sale OS</span>
+                        <span id="sidebar-company-subtitle" style="font-size: 0.68rem; color: #94a3b8; line-height: 1.1; margin-top: 2px;">Smart CRM</span>
+                    </div>
                 </div>
             </div>
 
@@ -236,7 +239,6 @@
                     <form class="chat-input-area" id="chat-form">
                         <div class="input-actions-left">
                             <button type="button" class="action-btn" title="Add attachment"><i class="fa-solid fa-paperclip"></i></button>
-                            <button type="button" class="action-btn" title="Insert Emoji"><i class="fa-regular fa-face-smile"></i></button>
                         </div>
                         <input type="text" id="chat-input" placeholder="Type a message to simulate customer..." autocomplete="off">
                         <div class="input-actions-right">

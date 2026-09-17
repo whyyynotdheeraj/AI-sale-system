@@ -8,6 +8,7 @@ let selectedCustomerId = null;
 let currentFilter = 'all';
 let currentChannelFilter = 'all';
 let searchQuery = '';
+const customerSuggestions = {}; // Map customerId -> suggested reply text
 
 // DOM Elements
 const conversationsContainer = document.getElementById('conversations-container');
@@ -186,6 +187,10 @@ function setupEventListeners() {
             if (suggestion && chatInput) {
                 chatInput.value = suggestion;
                 chatInput.focus();
+                if (selectedCustomerId) {
+                    delete customerSuggestions[selectedCustomerId];
+                }
+                document.getElementById('copilot-suggestion-card').style.display = 'none';
                 showToast("AI suggestion inserted into chat!");
             }
         });
@@ -210,8 +215,16 @@ function setupEventListeners() {
     const copilotCloseBtn = document.getElementById('copilot-close-btn');
     if (copilotCloseBtn) {
         copilotCloseBtn.addEventListener('click', () => {
+            if (selectedCustomerId) {
+                delete customerSuggestions[selectedCustomerId];
+            }
             document.getElementById('copilot-suggestion-card').style.display = 'none';
         });
+    }
+
+    const copilotFollowupBtn = document.getElementById('copilot-followup-btn');
+    if (copilotFollowupBtn) {
+        copilotFollowupBtn.addEventListener('click', fetchCopilotFollowup);
     }
 
     const refreshInsightsBtn = document.getElementById('refresh-insights-btn');
@@ -289,22 +302,13 @@ function setupEventListeners() {
     const sendFollowupBtn = document.getElementById('send-followup-btn');
     const followupMessageText = document.getElementById('followup-message-text');
 
-    document.getElementById('action-followup').addEventListener('click', () => {
-        if (!selectedCustomerId) {
-            showToast("Please select a customer first", "error");
-            return;
-        }
-        const cust = customers.find(c => c.id === selectedCustomerId);
-        if (!cust) return;
-
-        // Generate smart default text
-        const name = cust.name ? cust.name.split(' ')[0] : 'there';
-        const product = cust.interested_product || 'our services';
-        
-        followupMessageText.value = `Hi ${name},\n\nI'm following up to see if you are still interested in ${product}? Please let me know if you have any questions or need further assistance!\n\nBest,\nSarah Connor`;
-        
-        followupModal.style.display = 'flex';
-    });
+    // Follow-up Feature: Unify into inline copilot card instead of dual windows
+    const actionFollowupBtn = document.getElementById('action-followup');
+    if (actionFollowupBtn) {
+        actionFollowupBtn.addEventListener('click', () => {
+            fetchCopilotFollowup();
+        });
+    }
 
     followupCloseBtn.addEventListener('click', () => {
         followupModal.style.display = 'none';
@@ -436,6 +440,19 @@ function selectCustomer(customerId) {
 
     // Populate Sidebar Details Panel
     updateRightPanel(customer);
+
+    // Isolate AI suggestion strictly per customer
+    const copilotCard = document.getElementById('copilot-suggestion-card');
+    const copilotText = document.getElementById('copilot-suggestion-text');
+    if (copilotCard && copilotText) {
+        if (customerSuggestions[customerId]) {
+            copilotText.innerText = customerSuggestions[customerId];
+            copilotCard.style.display = 'block';
+        } else {
+            copilotCard.style.display = 'none';
+            copilotText.innerText = '';
+        }
+    }
 
     // Fetch and display messages
     fetchMessages(customerId);
@@ -936,6 +953,9 @@ async function fetchCopilotSuggestion() {
         const data = await res.json();
 
         textEl.innerText = data.suggested_reply;
+        if (selectedCustomerId) {
+            customerSuggestions[selectedCustomerId] = data.suggested_reply;
+        }
         card.style.display = 'block';
         showToast("AI suggestion ready!");
 
@@ -946,6 +966,50 @@ async function fetchCopilotSuggestion() {
         if (suggestBtn) {
             suggestBtn.disabled = false;
             suggestBtn.innerHTML = '<i class="fa-solid fa-sparkles"></i> Suggest Reply';
+        }
+    }
+}
+
+// Fetch Copilot Followup directly into the in-line card without popping up extra windows
+async function fetchCopilotFollowup() {
+    if (!selectedCustomerId) {
+        showToast("Please select a conversation first", "error");
+        return;
+    }
+
+    const card = document.getElementById('copilot-suggestion-card');
+    const textEl = document.getElementById('copilot-suggestion-text');
+    const followupBtn = document.getElementById('copilot-followup-btn');
+
+    if (followupBtn) {
+        followupBtn.disabled = true;
+        followupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Writing...';
+    }
+
+    try {
+        const convRes = await fetch(`/conversations/by-customer/${selectedCustomerId}`);
+        if (!convRes.ok) throw new Error("No conversation found");
+        const convData = await convRes.json();
+
+        const res = await fetch(`/api/conversations/${convData.conversation_id}/auto-followup`, { method: 'POST' });
+        if (!res.ok) throw new Error("Failed to generate follow-up");
+        const data = await res.json();
+
+        const followupText = data.followup_message || data.message || "Hi, just following up to check if you have any questions or need custom quotations!";
+        textEl.innerText = followupText;
+        if (selectedCustomerId) {
+            customerSuggestions[selectedCustomerId] = followupText;
+        }
+        card.style.display = 'block';
+        showToast("Follow-up suggestion ready!");
+
+    } catch (e) {
+        console.error(e);
+        showToast("Error generating follow-up", "error");
+    } finally {
+        if (followupBtn) {
+            followupBtn.disabled = false;
+            followupBtn.innerHTML = '<i class="fa-solid fa-calendar-plus"></i> Auto Follow-up';
         }
     }
 }
@@ -1172,7 +1236,12 @@ async function fetchGlobalBranding() {
 
 function updateGlobalBranding(name, logo) {
     const logoTexts = document.querySelectorAll('.logo-text');
-    logoTexts.forEach(el => el.textContent = name || "AI Sale OS");
+    logoTexts.forEach(el => el.textContent = "AI Sale OS");
+
+    const companySubtitle = document.getElementById('sidebar-company-subtitle');
+    if (companySubtitle) {
+        companySubtitle.textContent = name || "Smart CRM";
+    }
     
     // If we have a logo icon somewhere, update it
     const logoIcons = document.querySelectorAll('.logo-icon');

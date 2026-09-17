@@ -16,9 +16,9 @@ from .ai_tools import AIToolExecutor
 logger = logging.getLogger("ai_service")
 
 FALLBACKS = [
-    "Thank you for reaching out to {company_name}! I would love to help you with our garment collections. May I know what products or catalog you are looking for today?",
-    "Hi there! Warm welcome to {company_name}. We specialize in high-quality apparel manufacturing. What type of garments or bulk styles are you interested in?",
-    "Hello! Thanks for contacting {company_name}. We're excited to partner with you on your apparel inventory. Are you looking for custom designs or wholesale orders?",
+    "Hello! Welcome to {company_name}. Aap kya dekh rahe hain? Agar specific collection ya catalog chahiye toh batayein, I will assist you.",
+    "Hi! {company_name} mein aapka swagat hai. Batayein kis product ke baare mein jankari chahiye — bulk order, custom styles, ya catalog dekhna hai? I am here to help.",
+    "Hello! Thanks for reaching out to {company_name}. Kaise madad kar sakti hoon? Products, pricing, ya delivery ke baare mein kuch bhi pooch sakte hain.",
 ]
 
 # Module 11: Prompt Versioning Library
@@ -30,11 +30,12 @@ Your primary objective is to build trust, answer questions using exact company f
 
 == YOUR CONVERSATIONAL PROTOCOLS ==
 1. **Be Extremely Human & Natural**: Speak warmly, casually, and authentically like a real human sales professional. DO NOT sound like an AI or a robot. Absolutely avoid generic phrases like "Based on our knowledge base", "I am an AI", or "Here is the information". Use a friendly mix of Hindi and English (Hinglish) if the customer uses it.
-2. **Channel Adaptability**:
-   - If Channel is **Email**: Write a well-structured but warm and personal business email.
-   - If Channel is **WhatsApp/Chat**: Keep responses short, conversational, and highly engaging. Talk to them like a helpful friend. Use emojis naturally but sparingly. Avoid bullet-point overload.
-3. **Strict Facts & Zero Hallucinations**: Rely strictly on the Company Brain & RAG evidence provided below for MOQ, pricing, shipping, and return rules.
-4. **Active Sales Qualification**: Always end the conversation naturally with an engaging follow-up question to uncover their needs (e.g. quantity, fabric, city).
+2. **NO KEYBOARD EMOJIS**: Do NOT use keyboard emojis or emoticons in your replies (no smiley faces, no hands, no symbols like :), :-), etc.). Keep the text completely clean, professional, and natural.
+3. **Channel Adaptability**:
+   - If Channel is **Email**: Write a well-structured but warm and personal business email with clear points and follow-up.
+   - If Channel is **WhatsApp/Chat**: Keep responses short (2-3 sentences), conversational, direct, and helpful. Avoid bullet-point overload.
+4. **Strict Facts & Zero Hallucinations**: Rely strictly on the Company Brain & RAG evidence provided below for MOQ, pricing, shipping, and return rules.
+5. **Active Sales Qualification**: Always end the conversation naturally with an engaging follow-up question to uncover their needs (e.g. quantity, fabric preference, delivery city).
 """,
 
     "V3": """You are 'Sarah', a Master Sales Strategist & Senior Account Manager for '{company_name}'.
@@ -62,10 +63,10 @@ def generate_sales_reply(
     company_id = settings.company_id if settings else 1
     biz_name = getattr(settings, 'business_name', None) or "our manufacturing company"
 
-    provider_name = getattr(settings, 'ai_provider', 'gemini') or 'gemini'
-    model_name = getattr(settings, 'ai_model', 'gemini-flash-latest') or 'gemini-flash-latest'
-    if model_name in ['gemini-2.0-flash', 'gemini-1.5-flash']:
-        model_name = 'gemini-flash-latest'
+    provider_name = getattr(settings, 'ai_provider', 'groq') or 'groq'
+    model_name = getattr(settings, 'ai_model', 'openai/gpt-oss-120b') or 'openai/gpt-oss-120b'
+    if model_name in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest']:
+        model_name = 'openai/gpt-oss-120b'
     prompt_ver = getattr(settings, 'prompt_version', 'V2') or 'V2'
 
     # Module 1: Build Company Brain Prompt
@@ -129,7 +130,7 @@ Notes: {getattr(customer, 'internal_notes', 'None')}
             system_instruction=system_instruction,
             contents=contents,
             temperature=0.85 if force_variation else 0.7,
-            max_tokens=650
+            max_tokens=400
         )
         reply_text = res["text"].strip()
         in_tokens = res.get("input_tokens", 0)

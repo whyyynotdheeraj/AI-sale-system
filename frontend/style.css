@@ -2163,3 +2163,128 @@ input:checked + .slider:before {
     background: var(--hover-bg);
     border-color: var(--color-primary);
 }
+
+/* ══════════════════════════════════════════════
+   3D MODERN UI ENHANCEMENTS & ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+/* 3D App Logo Badge */
+.logo-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    border-radius: 10px;
+    color: white;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    transform: perspective(400px) rotateY(-6deg) rotateX(4deg);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.logo:hover .logo-icon {
+    transform: perspective(400px) rotateY(0deg) rotateX(0deg) scale(1.08);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6);
+}
+
+/* 3D Conversation Card Hover Effect */
+.conv-card {
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.2s ease;
+    transform-style: preserve-3d;
+    perspective: 800px;
+}
+
+.conv-card:hover {
+    transform: translateY(-2px) translateZ(4px);
+    box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.conv-card.active {
+    transform: translateY(-1px) translateZ(6px);
+    box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.22), inset 3px 0 0 var(--color-primary);
+}
+
+/* 3D Buttons & Tactile Feedback */
+.btn-primary, .send-btn {
+    transform-style: preserve-3d;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover, .send-btn:hover {
+    transform: translateY(-1.5px) scale(1.015);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+
+.btn-primary:active, .send-btn:active {
+    transform: translateY(1px) scale(0.985);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+/* Modern 3D Copilot Bar & Suggestion Card */
+.copilot-bar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme="dark"] .copilot-bar {
+    background: linear-gradient(180deg, rgba(20, 25, 38, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border-top: 1px solid rgba(30, 41, 59, 0.8) !important;
+}
+
+.copilot-suggestion-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 28px -6px rgba(99, 102, 241, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(12px);
+    animation: cardEntrance3D 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom center;
+}
+
+@keyframes cardEntrance3D {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96) perspective(600px) rotateX(6deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) perspective(600px) rotateX(0deg);
+    }
+}
+
+/* 3D Message Bubble Entrance */
+.message-bubble {
+    animation: bubblePop3D 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom left;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.message.agent .message-bubble {
+    transform-origin: bottom right;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+}
+
+@keyframes bubblePop3D {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Smooth Input Focus 3D Ring */
+.chat-input-area {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-input-area:focus-within {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 6px 20px rgba(0, 0, 0, 0.06);
+    border-color: var(--color-primary);
+}
+
