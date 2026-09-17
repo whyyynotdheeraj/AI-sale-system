@@ -64,8 +64,10 @@ Recent Context: {conversation_history}
             )
 
             raw_text = res["text"].strip()
-            if raw_text.startswith("```json"):
-                raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+            import re
+            json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+            if json_match:
+                raw_text = json_match.group(0)
 
             analysis = json.loads(raw_text)
 

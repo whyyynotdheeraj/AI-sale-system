@@ -32,14 +32,16 @@ class GeminiProvider(BaseAIProvider):
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is not set.")
 
-        models_to_try = [self.model, "gemini-flash-latest", "gemini-2.0-flash-lite", "gemini-2.0-flash"]
+        models_to_try = [self.model, "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash-latest"]
         # Remove duplicates preserving order
         seen = set()
         models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
         last_error = None
-        for m in models_to_try:
+        for i, m in enumerate(models_to_try):
             try:
+                if i > 0:
+                    time.sleep(1.5)  # Pause to respect rate limits between model attempts
                 return self._call_gemini_api(m, system_instruction, contents, temperature, max_tokens)
             except Exception as e:
                 last_error = e
