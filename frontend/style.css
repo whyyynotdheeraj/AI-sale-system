@@ -6,37 +6,37 @@
 :root {
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     
-    /* Elegant Dark & Light Palette */
-    --bg-app: #f6f8fa;
+    /* Elegant High-End Palette */
+    --bg-app: #fcfcfd;
     --bg-card: #ffffff;
-    --bg-sidebar: #0f172a; /* Sleek slate dark */
-    --bg-sidebar-hover: #1e293b;
-    --border-color: #e2e8f0;
+    --bg-sidebar: #fcfcfd; /* Unified clean look */
+    --bg-sidebar-hover: #f3f4f6;
+    --border-color: #e5e7eb;
     
     /* Text colors */
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --text-main: #111827;
+    --text-muted: #6b7280;
     --text-inverse: #ffffff;
     
-    /* Accents */
-    --color-primary: #6366f1; /* Indigo */
+    /* Accents (Sophisticated Indigo/Violet) */
+    --color-primary: #4f46e5;
     --color-primary-light: #e0e7ff;
-    --color-success: #10b981; /* Emerald Green */
+    --color-success: #059669;
     --color-success-light: #d1fae5;
-    --color-warning: #f59e0b; /* Amber */
-    --color-danger: #ef4444; /* Rose Red */
-    --color-sparkle: #d946ef; /* Magenta Sparkle */
+    --color-warning: #d97706;
+    --color-danger: #e11d48;
+    --color-sparkle: #c026d3;
     
     /* Channel Colors */
-    --color-website: #3b82f6;
-    --color-whatsapp: #25d366;
-    --color-instagram: #e1306c;
-    --color-email: #f59e0b;
+    --color-website: #2563eb;
+    --color-whatsapp: #16a34a;
+    --color-instagram: #db2777;
+    --color-email: #d97706;
     
-    /* Shadows & Radii */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    /* Premium Shadows & Radii */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.05), 0 4px 8px -4px rgba(0, 0, 0, 0.03);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -48,22 +48,22 @@
 }
 
 /* ══════════════════════════════════════════════
-   DARK MODE THEME
+   DARK MODE THEME (Ultra-sleek OLED style)
    ══════════════════════════════════════════════ */
 [data-theme="dark"] {
-    --bg-app: #0b0f1a;
-    --bg-card: #141926;
-    --bg-sidebar: #080c14;
-    --bg-sidebar-hover: #1a2035;
-    --border-color: #1e293b;
+    --bg-app: #0a0a0a;
+    --bg-card: #111111;
+    --bg-sidebar: #0a0a0a;
+    --bg-sidebar-hover: #1a1a1a;
+    --border-color: #262626;
 
-    --text-main: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-inverse: #0f172a;
+    --text-main: #f5f5f5;
+    --text-muted: #888888;
+    --text-inverse: #0a0a0a;
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.7), 0 4px 8px -4px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] .navbar {
@@ -241,23 +241,24 @@ body {
 }
 
 /* ==========================================
-   LEFT SIDEBAR (Dark Slate)
+   LEFT SIDEBAR (Unified Clean Look)
    ========================================== */
 .sidebar {
     width: 260px;
     background-color: var(--bg-sidebar);
-    color: #94a3b8;
+    color: var(--text-muted);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid var(--border-color);
     flex-shrink: 0;
     padding: 24px 16px;
+    z-index: 10;
 }
 
 .sidebar-header {
     padding: 0 8px 24px 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .logo {
@@ -266,23 +267,10 @@ body {
     gap: 12px;
 }
 
-.logo-icon {
-    width: 36px;
-    height: 36px;
-    background: linear-gradient(135deg, var(--color-primary), #a855f7);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-inverse);
-    font-size: 1.1rem;
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
-}
-
 .logo-text {
     font-weight: 700;
     font-size: 1.2rem;
-    color: var(--text-inverse);
+    color: var(--text-main);
     letter-spacing: -0.5px;
 }
 
@@ -292,6 +280,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 28px;
+    overflow-y: auto;
+}
+.sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
 }
 
 .menu-section {
@@ -305,7 +301,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    color: #475569;
+    color: var(--text-muted);
     padding-left: 12px;
     margin-bottom: 6px;
 }
@@ -316,7 +312,7 @@ body {
     gap: 12px;
     padding: 10px 12px;
     border-radius: var(--radius-sm);
-    color: #94a3b8;
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
@@ -333,18 +329,18 @@ body {
 
 .menu-item:hover {
     background-color: var(--bg-sidebar-hover);
-    color: var(--text-inverse);
+    color: var(--text-main);
 }
 
 .menu-item.active {
     background-color: var(--color-primary);
-    color: var(--text-inverse);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .menu-item.active-channel {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-inverse);
+    background-color: var(--bg-sidebar-hover);
+    color: var(--text-main);
     border-left: 3px solid var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
@@ -356,7 +352,7 @@ body {
 
 .menu-item.disabled-channel:hover {
     background-color: transparent;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .badge {
@@ -701,24 +697,26 @@ body {
 
 /* Card layout */
 .conv-card {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 14px 16px;
+    margin: 6px 12px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition-fast);
     display: flex;
     gap: 12px;
     position: relative;
     user-select: none;
+    border: 1px solid transparent;
 }
 
 .conv-card:hover {
-    background-color: #f8fafc;
+    background-color: var(--bg-sidebar-hover);
 }
 
 .conv-card.active {
-    background-color: #f1f5f9;
-    border-left: 4px solid var(--color-primary);
-    padding-left: 12px;
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-color);
 }
 
 .conv-avatar-container {
@@ -1118,19 +1116,20 @@ input:checked + .slider:before {
 
 /* Right Message: AI */
 .msg-wrapper.right.ai-msg .msg-bubble {
-    background: var(--bg-card);
-    color: var(--text-main);
-    border: 1.5px solid var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary), #4338ca);
+    color: #ffffff;
+    border: none;
     border-bottom-right-radius: 4px;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.06);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.25);
 }
 
 /* Right Message: Human */
 .msg-wrapper.right.human-msg .msg-bubble {
-    background: var(--bg-card);
-    color: var(--text-main);
-    border: 1.5px solid #0284c7;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: #ffffff;
+    border: none;
     border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
 }
 
 /* Format bullet points & bold lists inside chat nicely */
@@ -1149,6 +1148,16 @@ input:checked + .slider:before {
 
 .msg-bubble p:last-child {
     margin-bottom: 0;
+}
+
+/* Fix link and bold text colors for colored backgrounds */
+.msg-wrapper.right .msg-bubble a {
+    color: #e0f2fe;
+    text-decoration: underline;
+}
+
+.msg-wrapper.right .msg-bubble strong {
+    color: #ffffff;
 }
 
 /* Product recommendation cards inside chat */
@@ -1574,8 +1583,8 @@ input:checked + .slider:before {
 }
 
 .toast {
-    background-color: var(--bg-sidebar);
-    color: var(--text-inverse);
+    background-color: #111827;
+    color: #ffffff;
     padding: 12px 18px;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
