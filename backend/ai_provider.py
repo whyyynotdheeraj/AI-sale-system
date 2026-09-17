@@ -100,7 +100,14 @@ class GeminiProvider(BaseAIProvider):
             }
         }
         data_bytes = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data_bytes, headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url, 
+            data=data_bytes, 
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Sales-OS/1.0"
+            }
+        )
         
         with urllib.request.urlopen(req, timeout=30) as response:
             res_body = json.loads(response.read().decode("utf-8"))
@@ -140,7 +147,8 @@ class OpenAIProvider(BaseAIProvider):
             data=data_bytes,
             headers={
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Sales-OS/1.0"
             }
         )
         with urllib.request.urlopen(req, timeout=30) as response:
@@ -156,7 +164,7 @@ class OpenAIProvider(BaseAIProvider):
             }
 
 class GroqProvider(BaseAIProvider):
-    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.3-70b-versatile"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "openai/gpt-oss-120b"):
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
         self.model = model
 
@@ -182,7 +190,8 @@ class GroqProvider(BaseAIProvider):
             data=data_bytes,
             headers={
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Sales-OS/1.0"
             }
         )
         with urllib.request.urlopen(req, timeout=30) as response:
@@ -203,14 +212,14 @@ def execute_with_retry_and_fallback(
     contents: List[Dict[str, str]],
     temperature: float = 0.7,
     max_tokens: int = 800,
-    max_retries: int = 3
+    max_retries: int = 1
 ) -> Dict[str, Any]:
     """
-    Executes AI prompt with Exponential Backoff Retry (1s -> 2s -> 4s) and Provider Failover.
+    Executes AI prompt with Provider Failover and fast fail on auth errors.
     """
     primary_p = provider_name.lower().strip()
     providers_queue = [primary_p]
-    for alt in ["gemini", "openai", "groq"]:
+    for alt in ["groq", "gemini", "openai"]:
         if alt not in providers_queue:
             providers_queue.append(alt)
 
@@ -230,10 +239,23 @@ def execute_with_retry_and_fallback(
                 res = provider.generate(system_instruction, contents, temperature, max_tokens)
                 res["fallback_used"] = (p_name != primary_p)
                 return res
+            except ValueError as ve:
+                # Missing API key - fail fast and move to next provider immediately
+                logger.warning(f"[AIEngine] Skipping provider '{p_name}': {ve}")
+                last_error = ve
+                break
+            except urllib.error.HTTPError as he:
+                last_error = he
+                error_body = he.read().decode("utf-8") if hasattr(he, 'read') else str(he)
+                logger.warning(f"[AIEngine] HTTP Error {he.code} on '{p_name}': {error_body}")
+                if he.code in [401, 403, 404]:
+                    # Auth or Not Found error - do not retry
+                    break
+                time.sleep(1)
             except Exception as e:
                 last_error = e
                 logger.warning(f"[AIEngine] Retry {attempt}/{max_retries} for provider '{p_name}' failed: {e}")
-                time.sleep(attempt * 1.5)
+                time.sleep(1)
 
     logger.error(f"[AIEngine] All providers failed: {last_error}")
     raise RuntimeError(f"All AI Providers failed. Last error: {last_error}")
