@@ -133,6 +133,7 @@ function setupEventListeners() {
             // Auto close mobile sidebar
             document.querySelector('.sidebar').classList.remove('active');
             
+            if (typeof window.switchView === 'function') window.switchView('inbox');
             renderConversationsList();
         });
     });
@@ -1275,30 +1276,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBackBtn = document.getElementById('settings-back-btn');
     const pageTitle = document.getElementById('page-title');
 
-    // Navigation
-    function showSettings() {
-        dashboardGrid.style.display = 'none';
-        settingsPage.style.display = 'flex';
-        pageTitle.textContent = 'Settings';
-        
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        if (settingsMenuBtn) settingsMenuBtn.classList.add('active');
-        
-        loadSettings();
-    }
+    // Global Navigation (View Router)
+    window.switchView = function(viewName) {
+        const grid = document.querySelector('.dashboard-grid');
+        const settings = document.getElementById('settings-page');
+        const analytics = document.getElementById('analytics-page');
+        const workflows = document.getElementById('workflows-page');
+        const title = document.getElementById('page-title');
 
-    function showInbox() {
-        dashboardGrid.style.display = 'flex';
-        settingsPage.style.display = 'none';
-        pageTitle.textContent = 'Inbox';
-        
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        if (inboxMenuBtn) inboxMenuBtn.classList.add('active');
-    }
+        // Hide all views
+        if (grid) grid.style.display = 'none';
+        if (settings) settings.style.display = 'none';
+        if (analytics) analytics.style.display = 'none';
+        if (workflows) workflows.style.display = 'none';
 
-    if (settingsMenuBtn) settingsMenuBtn.addEventListener('click', showSettings);
-    if (inboxMenuBtn) inboxMenuBtn.addEventListener('click', showInbox);
-    if (settingsBackBtn) settingsBackBtn.addEventListener('click', showInbox);
+        // Remove active state from main menu items
+        ['menu-inbox', 'menu-settings', 'menu-analytics', 'menu-workflows'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+
+        if (viewName === 'settings') {
+            if (settings) settings.style.display = 'flex';
+            if (title) title.textContent = 'Settings';
+            document.getElementById('menu-settings')?.classList.add('active');
+            if (typeof loadSettings === 'function') loadSettings();
+        } else if (viewName === 'analytics') {
+            if (analytics) analytics.style.display = 'flex';
+            if (title) title.textContent = 'Analytics';
+            document.getElementById('menu-analytics')?.classList.add('active');
+        } else if (viewName === 'workflows') {
+            if (workflows) workflows.style.display = 'flex';
+            if (title) title.textContent = 'Workflows';
+            document.getElementById('menu-workflows')?.classList.add('active');
+        } else {
+            if (grid) grid.style.display = 'flex';
+            if (title) title.textContent = 'Inbox';
+            document.getElementById('menu-inbox')?.classList.add('active');
+        }
+    };
+
+    if (settingsMenuBtn) settingsMenuBtn.addEventListener('click', (e) => { e.preventDefault(); window.switchView('settings'); });
+    if (inboxMenuBtn) inboxMenuBtn.addEventListener('click', (e) => { e.preventDefault(); window.switchView('inbox'); });
+    if (settingsBackBtn) settingsBackBtn.addEventListener('click', (e) => { e.preventDefault(); window.switchView('inbox'); });
     
     if (logoutMenuBtn) logoutMenuBtn.addEventListener('click', async () => {
         try {
@@ -1878,30 +1898,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsPage = document.getElementById('settings-page');
     const pageTitle = document.getElementById('page-title');
 
-    function showAnalytics() {
-        dashboardGrid.style.display = 'none';
-        settingsPage.style.display = 'none';
-        analyticsPage.style.display = 'flex';
-        pageTitle.textContent = 'Analytics';
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        if (analyticsMenuBtn) analyticsMenuBtn.classList.add('active');
-        loadAnalytics();
-    }
-
-    function hideAnalytics() {
-        analyticsPage.style.display = 'none';
-        dashboardGrid.style.display = 'flex';
-        pageTitle.textContent = 'Inbox';
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('menu-inbox')?.classList.add('active');
-    }
-
-    if (analyticsMenuBtn) analyticsMenuBtn.addEventListener('click', showAnalytics);
-    if (analyticsBackBtn) analyticsBackBtn.addEventListener('click', hideAnalytics);
+    if (analyticsMenuBtn) analyticsMenuBtn.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(typeof window.switchView === 'function') window.switchView('analytics'); 
+        loadAnalytics(); 
+    });
+    if (analyticsBackBtn) analyticsBackBtn.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(typeof window.switchView === 'function') window.switchView('inbox'); 
+    });
     if (analyticsRefreshBtn) analyticsRefreshBtn.addEventListener('click', loadAnalytics);
-
-    document.getElementById('menu-inbox')?.addEventListener('click', () => { if (analyticsPage) analyticsPage.style.display = 'none'; });
-    document.getElementById('menu-settings')?.addEventListener('click', () => { if (analyticsPage) analyticsPage.style.display = 'none'; });
 
     async function loadAnalytics() {
         try {
@@ -2114,28 +2120,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showWorkflows() {
-        dashboardGrid.style.display = 'none';
-        if (settingsPage) settingsPage.style.display = 'none';
-        if (analyticsPage) analyticsPage.style.display = 'none';
-        if (workflowsPage) { workflowsPage.style.display = 'flex'; }
-        if (pageTitleEl) pageTitleEl.textContent = 'Workflows';
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        if (workflowMenuBtn) workflowMenuBtn.classList.add('active');
+    if (workflowMenuBtn) workflowMenuBtn.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(typeof window.switchView === 'function') window.switchView('workflows'); 
         renderWorkflowTemplates();
         loadWorkflowTasks();
-    }
-
-    function hideWorkflows() {
-        if (workflowsPage) workflowsPage.style.display = 'none';
-        dashboardGrid.style.display = 'flex';
-        if (pageTitleEl) pageTitleEl.textContent = 'Inbox';
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('menu-inbox')?.classList.add('active');
-    }
-
-    if (workflowMenuBtn) workflowMenuBtn.addEventListener('click', (e) => { e.preventDefault(); showWorkflows(); });
-    if (workflowsBackBtn) workflowsBackBtn.addEventListener('click', hideWorkflows);
+    });
+    if (workflowsBackBtn) workflowsBackBtn.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(typeof window.switchView === 'function') window.switchView('inbox'); 
+    });
     if (wfRefreshBtn) wfRefreshBtn.addEventListener('click', loadWorkflowTasks);
 
     // Save Auto-Pilot Rules
