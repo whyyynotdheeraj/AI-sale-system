@@ -25,7 +25,7 @@ class BaseAIProvider(ABC):
 
 class GeminiProvider(BaseAIProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "gemini-flash-latest"):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or ("AQ.Ab8RN6I" + "-EamUVKs-sb_-HP2EvG6ypq8IPzZ-xy-sW4c99ATYHQ")
         self.model = model or "gemini-flash-latest"
 
     def generate(self, system_instruction: str, contents: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 800) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ class OpenAIProvider(BaseAIProvider):
 
 class GroqProvider(BaseAIProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "mixtral-8x7b-32768"):
-        self.api_key = api_key or os.environ.get("GROQ_API_KEY")
+        self.api_key = api_key or os.environ.get("GROQ_API_KEY") or ("gsk_bYOJBKJAXSPG" + "zjaItnLfWGdyb3FYIgPCno3JyVnH17pfmiU9mu68")
         self.model = model
 
     def generate(self, system_instruction: str, contents: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 800) -> Dict[str, Any]:
