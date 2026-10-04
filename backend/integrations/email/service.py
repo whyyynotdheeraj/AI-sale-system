@@ -62,7 +62,7 @@ class EmailIntegrationService:
             logger.info("[Email][Fetch] On-demand fetch complete for company %d: %d new emails", company_id, new_count)
             return {"status": "ok", "new_emails": new_count}
         except Exception as e:
-            logger.error("[Email][Fetch] Error during on-demand fetch for company %d: %s", company_id, e)
+            logger.warning("[Email][Fetch] Error during on-demand fetch for company %d: %s", company_id, e)
             return {"status": "error", "error": str(e), "new_emails": 0}
         finally:
             db.close()
@@ -91,7 +91,7 @@ class EmailIntegrationService:
                 backoff = self._poll_interval
             except Exception as e:
                 self.last_error = str(e)
-                logger.error("[Email][Poll] Global Polling Error: %s", e)
+                logger.warning("[Email][Poll] Global Polling Error: %s", e)
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 300)
             finally:
@@ -153,12 +153,12 @@ class EmailIntegrationService:
                             if saved:
                                 new_count += 1
                 except Exception as e:
-                    logger.error("[Email][IMAP] Error processing email id %s for %s: %s", email_id, email_address, e)
+                    logger.warning("[Email][IMAP] Error processing email id %s for %s: %s", email_id, email_address, e)
         except imaplib.IMAP4.error as e:
-            logger.error("[Email][IMAP] Authentication/Connection Error for %s: %s", email_address, e)
+            logger.warning("[Email][IMAP] Authentication/Connection Error for %s: %s", email_address, e)
             self.last_error = f"IMAP Auth Error for {email_address}: {e}"
         except Exception as e:
-            logger.error("[Email][IMAP] Connection Error for %s: %s", email_address, e)
+            logger.warning("[Email][IMAP] Connection Error for %s: %s", email_address, e)
             self.last_error = str(e)
         finally:
             if mail:
@@ -351,7 +351,7 @@ class EmailIntegrationService:
                 self._send_auto_reply(db, company_id, company_email, customer, conversation, subject, body, settings)
 
         except Exception as e:
-            logger.error("[Email][DB] Error processing %s: %s", sender_email, e)
+            logger.warning("[Email][DB] Error processing %s: %s", sender_email, e)
             db.rollback()
 
     def _send_auto_reply(self, db, company_id, company_email, customer, conversation, original_subject, incoming_text, settings):
@@ -395,7 +395,7 @@ class EmailIntegrationService:
         # Fetch the company's SMTP credentials
         settings = db.query(models.Settings).filter(models.Settings.company_id == company_id).first()
         if not settings or not settings.gmail_address or not settings.gmail_app_password:
-            logger.error("[Email][SMTP] Cannot send - credentials not configured for company %d.", company_id)
+            logger.warning("[Email][SMTP] Cannot send - credentials not configured for company %d.", company_id)
             return False
 
         email_address = settings.gmail_address.strip()
@@ -415,7 +415,7 @@ class EmailIntegrationService:
             logger.info("[Email][SMTP] Email sent to %s via %s", to_email, email_address)
             return True
         except Exception as e:
-            logger.error("[Email][SMTP] Error for %s: %s", email_address, e)
+            logger.warning("[Email][SMTP] Error for %s: %s", email_address, e)
             self.last_error = str(e)
             return False
 
