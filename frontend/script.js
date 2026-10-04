@@ -2015,143 +2015,273 @@ window.openCopilotPanel = function() {
 };
 
 // ==========================================
-// WORKFLOW AUTOMATION PAGE LOGIC
+// TASK MANAGER PAGE LOGIC
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const workflowMenuBtn = document.getElementById('menu-workflows');
-    const workflowsPage = document.getElementById('workflows-page');
     const workflowsBackBtn = document.getElementById('workflows-back-btn');
-    const wfRefreshBtn = document.getElementById('wf-refresh-tasks-btn');
-    const dashboardGrid = document.querySelector('.dashboard-grid');
-    const analyticsPage = document.getElementById('analytics-page');
-    const settingsPage = document.getElementById('settings-page');
-    const pageTitleEl = document.getElementById('page-title');
+    const addTaskBtn = document.getElementById('add-task-btn');
+    const taskModal = document.getElementById('task-modal');
+    const taskModalClose = document.getElementById('task-modal-close');
+    const taskSaveBtn = document.getElementById('task-save-btn');
+    const taskListContainer = document.getElementById('task-list-container');
 
-    const WORKFLOW_TEMPLATES = [
-        { id: 'auto-reply', icon: 'fa-reply', color: '#6366f1', bg: 'rgba(99,102,241,0.1)', title: 'Auto-Reply to New Inquiry', desc: 'AI replies within 30 seconds when a new customer messages for the first time.', trigger: 'New Message', action: 'AI Reply' },
-        { id: 'hot-lead-alert', icon: 'fa-fire', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', title: 'Hot Lead Alert', desc: 'Notify the sales team when a lead score rises above 75.', trigger: 'Score > 75', action: 'Send Alert' },
-        { id: 'cold-followup', icon: 'fa-clock', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', title: 'Cold Lead Re-Engagement', desc: 'Auto-send a follow-up message after 3 days of silence.', trigger: '3 Day Silence', action: 'Send Follow-up' },
-        { id: 'catalog-send', icon: 'fa-images', color: '#10b981', bg: 'rgba(16,185,129,0.1)', title: 'Auto-Send Catalog', desc: 'Detect catalog/price list requests and attach the product catalog automatically.', trigger: 'Catalog Request', action: 'Send Catalog' },
-        { id: 'human-escalation', icon: 'fa-user-tie', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', title: 'Human Escalation Trigger', desc: 'Hand conversation to human agent after 5 AI exchanges without conversion.', trigger: '5 AI Turns', action: 'Escalate' },
-        { id: 'lead-qualify', icon: 'fa-clipboard-check', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', title: 'Lead Qualification Flow', desc: 'Automatically extract MOQ, product, budget, and timeline from the conversation.', trigger: 'First Message', action: 'Extract Data' },
-    ];
+    const STORAGE_KEY = 'ai-sale-os-tasks';
+    let editingTaskId = null;
+    let currentTaskFilter = 'all';
 
-    function renderWorkflowTemplates() {
-        const grid = document.getElementById('workflow-templates-grid');
-        if (!grid) return;
-        const savedStates = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
-        grid.innerHTML = WORKFLOW_TEMPLATES.map(t => {
-            const isActive = savedStates[t.id] !== false; // Default ON
-            return `
-            <div class="wf-template-card" style="background: var(--panel-bg); border: 1px solid ${isActive ? t.color : 'var(--border-color)'}; border-radius: 14px; padding: 18px; transition: all 0.3s; cursor: pointer; position: relative; overflow: hidden;" data-wf-id="${t.id}">
-                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: ${isActive ? t.color : 'var(--border-color)'}; border-radius: 14px 0 0 14px;"></div>
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;">
-                    <div style="width: 40px; height: 40px; border-radius: 10px; background: ${t.bg}; display: flex; align-items: center; justify-content: center; color: ${t.color}; font-size: 1rem;">
-                        <i class="fa-solid ${t.icon}"></i>
+    // Load tasks from localStorage
+    function loadTasks() {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+    function saveTasks(tasks) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    // Priority config
+    const PRIORITY_CONFIG = {
+        low: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: 'fa-minus', label: 'Low' },
+        medium: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: 'fa-equals', label: 'Medium' },
+        high: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', icon: 'fa-arrow-up', label: 'High' },
+        urgent: { color: '#dc2626', bg: 'rgba(220,38,38,0.15)', icon: 'fa-fire', label: 'Urgent' }
+    };
+
+    const TAG_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+
+    function getTagColor(tag) {
+        let hash = 0;
+        for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+        return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+    }
+
+    function updateStats() {
+        const tasks = loadTasks();
+        const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+        el('task-stat-total', tasks.length);
+        el('task-stat-pending', tasks.filter(t => t.status === 'pending').length);
+        el('task-stat-progress', tasks.filter(t => t.status === 'in-progress').length);
+        el('task-stat-done', tasks.filter(t => t.status === 'done').length);
+    }
+
+    function renderTasks() {
+        const tasks = loadTasks();
+        updateStats();
+        if (!taskListContainer) return;
+
+        let filtered = tasks;
+        if (currentTaskFilter === 'urgent') {
+            filtered = tasks.filter(t => t.priority === 'urgent' || t.priority === 'high');
+        } else if (currentTaskFilter !== 'all') {
+            filtered = tasks.filter(t => t.status === currentTaskFilter);
+        }
+        // Sort: urgent first, then by due date
+        filtered.sort((a, b) => {
+            const po = { urgent: 0, high: 1, medium: 2, low: 3 };
+            if (po[a.priority] !== po[b.priority]) return po[a.priority] - po[b.priority];
+            if (a.due && b.due) return new Date(a.due) - new Date(b.due);
+            return (a.due ? -1 : 1);
+        });
+
+        if (filtered.length === 0) {
+            taskListContainer.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted);">
+                <i class="fa-solid fa-clipboard-list" style="font-size:2.5rem;margin-bottom:12px;opacity:0.3;display:block;"></i>
+                <div style="font-size:0.95rem;font-weight:600;">${currentTaskFilter === 'all' ? 'No tasks yet' : 'No ' + currentTaskFilter + ' tasks'}</div>
+                <div style="font-size:0.82rem;margin-top:4px;">Click "Add Task" to create a new task</div>
+            </div>`;
+            return;
+        }
+
+        taskListContainer.innerHTML = filtered.map(task => {
+            const p = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
+            const isChecked = task.status === 'done';
+            const dueStr = task.due ? new Date(task.due).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+            const isOverdue = task.due && new Date(task.due) < new Date() && task.status !== 'done';
+            const tagsHtml = (task.tags || []).map(t => `<span style="padding:2px 8px;background:${getTagColor(t)}22;color:${getTagColor(t)};font-size:0.7rem;font-weight:600;border-radius:6px;">${t}</span>`).join('');
+
+            return `<div class="task-card" data-task-id="${task.id}" style="background:var(--panel-bg, var(--bg-card));border-radius:12px;padding:14px 18px;border:1px solid ${isOverdue ? '#ef4444' : 'var(--border-color)'};display:flex;align-items:flex-start;gap:12px;transition:all 0.2s;${isChecked ? 'opacity:0.6;' : ''}">
+                <input type="checkbox" class="task-check" data-id="${task.id}" ${isChecked ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px;cursor:pointer;accent-color:var(--color-primary);flex-shrink:0;">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-weight:600;font-size:0.92rem;color:var(--text-main);${isChecked ? 'text-decoration:line-through;' : ''}">${task.title}</span>
+                        <span style="padding:2px 8px;background:${p.bg};color:${p.color};font-size:0.7rem;font-weight:700;border-radius:6px;"><i class="fa-solid ${p.icon}"></i> ${p.label}</span>
                     </div>
-                    <label class="switch" style="flex-shrink: 0;"><input type="checkbox" class="wf-template-toggle" data-wf-id="${t.id}" ${isActive ? 'checked' : ''}><span class="slider round"></span></label>
+                    ${task.description ? `<div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;line-height:1.4;">${task.description}</div>` : ''}
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                        ${dueStr ? `<span style="font-size:0.75rem;color:${isOverdue ? '#ef4444' : 'var(--text-muted)'};font-weight:500;"><i class="fa-solid fa-clock"></i> ${dueStr}${isOverdue ? ' (Overdue!)' : ''}</span>` : ''}
+                        ${task.reminder ? '<span style="font-size:0.72rem;color:#8b5cf6;"><i class="fa-solid fa-bell"></i> Reminder</span>' : ''}
+                        ${tagsHtml}
+                    </div>
                 </div>
-                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 6px;">${t.title}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">${t.desc}</div>
-                <div style="display: flex; gap: 8px;">
-                    <span style="padding: 3px 8px; background: ${t.bg}; color: ${t.color}; font-size: 0.7rem; font-weight: 600; border-radius: 6px;"><i class="fa-solid fa-bolt"></i> ${t.trigger}</span>
-                    <span style="padding: 3px 8px; background: var(--bg-main); color: var(--text-muted); font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color);">${t.action}</span>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    ${task.status !== 'done' ? `<button class="task-status-btn" data-id="${task.id}" title="Change Status" style="background:none;border:1px solid var(--border-color);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--text-muted);font-size:0.75rem;"><i class="fa-solid fa-arrows-spin"></i></button>` : ''}
+                    <button class="task-edit-btn" data-id="${task.id}" title="Edit" style="background:none;border:1px solid var(--border-color);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--text-muted);font-size:0.75rem;"><i class="fa-solid fa-pen"></i></button>
+                    <button class="task-delete-btn" data-id="${task.id}" title="Delete" style="background:none;border:1px solid var(--border-color);border-radius:8px;width:30px;height:30px;cursor:pointer;color:#ef4444;font-size:0.75rem;"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>`;
         }).join('');
 
-        // Wire toggles
-        document.querySelectorAll('.wf-template-toggle').forEach(toggle => {
-            toggle.addEventListener('change', (e) => {
-                e.stopPropagation();
-                const id = e.target.dataset.wfId;
-                const states = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
-                states[id] = e.target.checked;
-                localStorage.setItem('wf-template-states', JSON.stringify(states));
-                const t = WORKFLOW_TEMPLATES.find(x => x.id === id);
+        // Wire events
+        taskListContainer.querySelectorAll('.task-check').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const tasks = loadTasks();
+                const t = tasks.find(x => x.id === e.target.dataset.id);
+                if (t) { t.status = e.target.checked ? 'done' : 'pending'; saveTasks(tasks); renderTasks(); }
+            });
+        });
+        taskListContainer.querySelectorAll('.task-status-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                const tasks = loadTasks();
+                const t = tasks.find(x => x.id === id);
                 if (t) {
-                    const card = e.target.closest('.wf-template-card');
-                    if (card) {
-                        card.style.borderColor = e.target.checked ? t.color : 'var(--border-color)';
-                        card.querySelector('div[style*="position: absolute"]').style.background = e.target.checked ? t.color : 'var(--border-color)';
-                    }
+                    const cycle = ['pending', 'in-progress', 'done'];
+                    t.status = cycle[(cycle.indexOf(t.status) + 1) % cycle.length];
+                    saveTasks(tasks); renderTasks();
+                    if (typeof showToast === 'function') showToast('Status: ' + t.status, 'success');
                 }
-                showToast(e.target.checked ? `✅ Workflow "${t ? t.title : id}" activated` : `⏸ Workflow paused`, 'success');
+            });
+        });
+        taskListContainer.querySelectorAll('.task-edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => { openEditTask(e.currentTarget.dataset.id); });
+        });
+        taskListContainer.querySelectorAll('.task-delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                let tasks = loadTasks();
+                tasks = tasks.filter(x => x.id !== id);
+                saveTasks(tasks); renderTasks();
+                if (typeof showToast === 'function') showToast('Task deleted', 'success');
             });
         });
     }
 
-    async function loadWorkflowTasks() {
-        const container = document.getElementById('wf-tasks-container');
-        if (!container) return;
-        try {
-            const res = await fetch('/api/analytics/ai-dashboard');
-            if (!res.ok) throw new Error('Failed');
-            const data = await res.json();
-            const pending = data.telemetry.active_tasks;
-            // Update stat cards
-            document.getElementById('wf-stat-pending').textContent = pending;
-            document.getElementById('wf-stat-active').textContent = WORKFLOW_TEMPLATES.filter(t => {
-                const states = JSON.parse(localStorage.getItem('wf-template-states') || '{}');
-                return states[t.id] !== false;
-            }).length;
-            document.getElementById('wf-stat-done').textContent = data.telemetry.total_ai_requests;
-            document.getElementById('wf-stat-followups').textContent = pending;
-        } catch(e) {
-            console.error('Workflow load error:', e);
-        }
+    // Modal open/close
+    function openModal() {
+        if (taskModal) { taskModal.style.display = 'flex'; }
+        editingTaskId = null;
+        document.getElementById('task-modal-title').textContent = 'Add New Task';
+        document.getElementById('task-title-input').value = '';
+        document.getElementById('task-desc-input').value = '';
+        document.getElementById('task-due-input').value = '';
+        document.getElementById('task-priority-input').value = 'medium';
+        document.getElementById('task-tags-input').value = '';
+        document.getElementById('task-reminder-check').checked = false;
+    }
+    function closeModal() { if (taskModal) taskModal.style.display = 'none'; }
 
-        // Render empty or stub task list
-        if (container) {
-            container.innerHTML = `
-            <div style="overflow-x: auto;">
-                <table class="team-table" style="width: 100%;">
-                    <thead><tr>
-                        <th>Task Type</th><th>Customer</th><th>Triggered By</th><th>Status</th><th>Time</th>
-                    </tr></thead>
-                    <tbody id="wf-tasks-tbody">
-                        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);">
-                            <i class="fa-solid fa-robot" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:8px;"></i>
-                            Workflow engine is live. Tasks will appear here as AI processes conversations.
-                        </td></tr>
-                    </tbody>
-                </table>
-            </div>`;
-        }
+    function openEditTask(id) {
+        const tasks = loadTasks();
+        const t = tasks.find(x => x.id === id);
+        if (!t) return;
+        editingTaskId = id;
+        if (taskModal) taskModal.style.display = 'flex';
+        document.getElementById('task-modal-title').textContent = 'Edit Task';
+        document.getElementById('task-title-input').value = t.title || '';
+        document.getElementById('task-desc-input').value = t.description || '';
+        document.getElementById('task-due-input').value = t.due || '';
+        document.getElementById('task-priority-input').value = t.priority || 'medium';
+        document.getElementById('task-tags-input').value = (t.tags || []).join(', ');
+        document.getElementById('task-reminder-check').checked = !!t.reminder;
     }
 
-    if (workflowMenuBtn) workflowMenuBtn.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        if(typeof window.switchView === 'function') window.switchView('workflows'); 
-        renderWorkflowTemplates();
-        loadWorkflowTasks();
-    });
-    if (workflowsBackBtn) workflowsBackBtn.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        if(typeof window.switchView === 'function') window.switchView('inbox'); 
-    });
-    if (wfRefreshBtn) wfRefreshBtn.addEventListener('click', loadWorkflowTasks);
+    function saveTask() {
+        const title = document.getElementById('task-title-input').value.trim();
+        if (!title) { if (typeof showToast === 'function') showToast('Title is required', 'error'); return; }
 
-    // Save Auto-Pilot Rules
-    document.getElementById('save-autopilot-rules-btn')?.addEventListener('click', () => {
-        const rules = {
-            auto_reply: document.getElementById('autopilot-new-inquiry')?.checked,
-            hot_lead_alert: document.getElementById('autopilot-hot-lead')?.checked,
-            cold_reengagement: document.getElementById('autopilot-cold-reengagement')?.checked,
-            auto_catalog: document.getElementById('autopilot-catalog')?.checked,
-            escalate_to_human: document.getElementById('autopilot-escalate')?.checked,
-        };
-        localStorage.setItem('ai-autopilot-rules', JSON.stringify(rules));
-        showToast('Auto-Pilot rules saved!', 'success');
+        const tasks = loadTasks();
+        const tagsRaw = document.getElementById('task-tags-input').value;
+        const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+        const due = document.getElementById('task-due-input').value || null;
+        const reminder = document.getElementById('task-reminder-check').checked;
+
+        if (editingTaskId) {
+            const t = tasks.find(x => x.id === editingTaskId);
+            if (t) {
+                t.title = title;
+                t.description = document.getElementById('task-desc-input').value.trim();
+                t.due = due;
+                t.priority = document.getElementById('task-priority-input').value;
+                t.tags = tags;
+                t.reminder = reminder;
+            }
+        } else {
+            tasks.push({
+                id: 'task-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                title: title,
+                description: document.getElementById('task-desc-input').value.trim(),
+                status: 'pending',
+                priority: document.getElementById('task-priority-input').value,
+                due: due,
+                tags: tags,
+                reminder: reminder,
+                createdAt: new Date().toISOString()
+            });
+        }
+        saveTasks(tasks);
+        closeModal();
+        renderTasks();
+        if (typeof showToast === 'function') showToast(editingTaskId ? 'Task updated!' : 'Task added!', 'success');
+
+        // Schedule browser reminder
+        if (reminder && due) { scheduleReminder(title, due); }
+    }
+
+    function scheduleReminder(title, dueDate) {
+        const ms = new Date(dueDate).getTime() - Date.now();
+        if (ms <= 0) return;
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+        setTimeout(() => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('AI Sale OS - Task Reminder', { body: title, icon: '/frontend/favicon.ico' });
+            }
+            if (typeof showToast === 'function') showToast('Reminder: ' + title, 'info');
+        }, Math.min(ms, 2147483647)); // Cap at max setTimeout value
+    }
+
+    // Restore reminders on page load
+    function restoreReminders() {
+        const tasks = loadTasks();
+        tasks.forEach(t => {
+            if (t.reminder && t.due && t.status !== 'done') { scheduleReminder(t.title, t.due); }
+        });
+    }
+
+    // Event listeners
+    if (addTaskBtn) addTaskBtn.addEventListener('click', openModal);
+    if (taskModalClose) taskModalClose.addEventListener('click', closeModal);
+    if (taskModal) taskModal.addEventListener('click', (e) => { if (e.target === taskModal) closeModal(); });
+    if (taskSaveBtn) taskSaveBtn.addEventListener('click', saveTask);
+
+    // Filter buttons
+    document.querySelectorAll('[data-task-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-task-filter]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTaskFilter = btn.dataset.taskFilter;
+            renderTasks();
+        });
     });
 
-    // Restore saved auto-pilot state
-    const savedRules = JSON.parse(localStorage.getItem('ai-autopilot-rules') || '{}');
-    if (savedRules.auto_reply !== undefined) document.getElementById('autopilot-new-inquiry').checked = savedRules.auto_reply;
-    if (savedRules.hot_lead_alert !== undefined) document.getElementById('autopilot-hot-lead').checked = savedRules.hot_lead_alert;
-    if (savedRules.cold_reengagement !== undefined) document.getElementById('autopilot-cold-reengagement').checked = savedRules.cold_reengagement;
-    if (savedRules.auto_catalog !== undefined) document.getElementById('autopilot-catalog').checked = savedRules.auto_catalog;
-    if (savedRules.escalate_to_human !== undefined) document.getElementById('autopilot-escalate').checked = savedRules.escalate_to_human;
+    // Navigation
+    if (workflowMenuBtn) workflowMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.switchView === 'function') window.switchView('workflows');
+        renderTasks();
+    });
+    if (workflowsBackBtn) workflowsBackBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.switchView === 'function') window.switchView('inbox');
+    });
+
+    // Request notification permission early
+    if ('Notification' in window && Notification.permission === 'default') {
+        // Will be requested on first reminder save
+    }
+
+    // Initial render + restore reminders
+    restoreReminders();
 });
 
 // ==========================================

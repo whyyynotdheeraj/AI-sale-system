@@ -13,7 +13,35 @@ from .sales_intelligence import SalesIntelligenceEngine
 from .ai_telemetry import record_telemetry
 from .ai_tools import AIToolExecutor
 
+import hashlib
+from functools import lru_cache
+
 logger = logging.getLogger("ai_service")
+
+# Simple response cache (in-memory, max 200 entries)
+_response_cache = {}
+_CACHE_MAX = 200
+_CACHE_TTL = 300  # 5 minutes
+
+def _cache_key(customer_id, message_text):
+    raw = f"{customer_id}:{message_text[:100].lower().strip()}"
+    return hashlib.md5(raw.encode()).hexdigest()
+
+def _get_cached(key):
+    if key in _response_cache:
+        entry = _response_cache[key]
+        if time.time() - entry['ts'] < _CACHE_TTL:
+            logger.info(f"[Cache] HIT for key {key[:8]}")
+            return entry['text']
+        else:
+            del _response_cache[key]
+    return None
+
+def _set_cache(key, text):
+    if len(_response_cache) >= _CACHE_MAX:
+        oldest_key = min(_response_cache, key=lambda k: _response_cache[k]['ts'])
+        del _response_cache[oldest_key]
+    _response_cache[key] = {'text': text, 'ts': time.time()}
 
 FALLBACKS = [
     "Hello! Welcome to {company_name}. Aap kya dekh rahe hain? Agar specific collection ya catalog chahiye toh batayein, I will assist you.",
@@ -64,9 +92,7 @@ def generate_sales_reply(
     biz_name = getattr(settings, 'business_name', None) or "our manufacturing company"
 
     provider_name = getattr(settings, 'ai_provider', 'groq') or 'groq'
-    model_name = getattr(settings, 'ai_model', 'openai/gpt-oss-120b') or 'openai/gpt-oss-120b'
-    if model_name in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest']:
-        model_name = 'openai/gpt-oss-120b'
+    model_name = getattr(settings, 'ai_model', 'llama-3.3-70b-versatile') or 'llama-3.3-70b-versatile'
     prompt_ver = getattr(settings, 'prompt_version', 'V2') or 'V2'
 
     # Module 1: Build Company Brain Prompt
@@ -122,6 +148,17 @@ Notes: {getattr(customer, 'internal_notes', 'None')}
     # Append current message
     contents.append({"role": "user", "text": new_message_text})
 
+    # Response Cache Check
+    cache_k = _cache_key(customer.id if customer else 0, new_message_text)
+    cached = _get_cached(cache_k)
+    if cached and not force_variation:
+        logger.info(f"[AIService] Returning cached reply for customer {customer.id if customer else 'unknown'}")
+        if db:
+            record_telemetry(db=db, company_id=company_id, request_type="Sales_Reply_Cached",
+                           provider="Cache", model="LRU", latency_ms=0,
+                           input_tokens=0, output_tokens=0, success=True, fallback_used=False)
+        return cached
+
     # Trigger Execution with Retry & Failover
     fallback_used = False
     try:
@@ -133,6 +170,7 @@ Notes: {getattr(customer, 'internal_notes', 'None')}
             max_tokens=400
         )
         reply_text = res["text"].strip()
+        _set_cache(cache_k, reply_text)
         in_tokens = res.get("input_tokens", 0)
         out_tokens = res.get("output_tokens", 0)
         actual_provider = res.get("provider", provider_name)

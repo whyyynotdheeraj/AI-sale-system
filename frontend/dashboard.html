@@ -780,7 +780,7 @@
             </div>
 
             <!-- ANALYTICS PAGE -->
-            <div id="analytics-page" style="display: none; flex-direction: column; gap: 24px; padding: 24px; overflow-y: auto; height: calc(100vh - 72px);">
+            <div id="analytics-page" style="display: none; flex-direction: column; gap: 24px; padding: 24px; overflow-y: auto;">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                     <button class="btn-icon" id="analytics-back-btn" title="Back to Inbox"><i class="fa-solid fa-arrow-left"></i></button>
                     <h2 style="font-size: 22px; font-weight: 700; color: var(--text-main); margin: 0;">Analytics Dashboard</h2>
@@ -845,85 +845,91 @@
             </div>
 
             <!-- WORKFLOW AUTOMATION PAGE -->
-            <div id="workflows-page" style="display: none; flex-direction: column; gap: 24px; padding: 24px; overflow-y: auto; height: calc(100vh - 72px);">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                    <button class="btn-icon" id="workflows-back-btn" title="Back to Inbox"><i class="fa-solid fa-arrow-left"></i></button>
-                    <h2 style="font-size: 22px; font-weight: 700; color: var(--text-main); margin: 0;">Workflow Automation</h2>
-                    <span style="margin-left: auto; padding: 4px 12px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12)); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; border-radius: 20px; border: 1px solid rgba(99,102,241,0.2);"><i class="fa-solid fa-robot"></i> AI-Powered</span>
+            <div id="workflows-page" style="display: none; flex-direction: column; gap: 20px; padding: 24px; overflow-y: auto;">
+                <!-- Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button class="btn-icon" id="workflows-back-btn" title="Back to Inbox"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h2 style="font-size: 22px; font-weight: 700; color: var(--text-main); margin: 0;">Task Manager</h2>
+                        <span style="padding: 4px 12px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12)); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; border-radius: 20px; border: 1px solid rgba(99,102,241,0.2);"><i class="fa-solid fa-clipboard-list"></i> Business Tasks</span>
+                    </div>
+                    <button id="add-task-btn" style="padding: 8px 18px; background: var(--color-primary); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"><i class="fa-solid fa-plus"></i> Add Task</button>
                 </div>
 
-                <!-- Workflow Stats Row -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-                    <div style="background: var(--panel-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(99,102,241,0.1); display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 1.2rem;"><i class="fa-solid fa-play"></i></div>
-                        <div><div id="wf-stat-active" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">0</div><div style="font-size: 0.8rem; color: var(--text-muted);">Active Workflows</div></div>
+                <!-- Stats Row -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+                    <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
+                        <div id="task-stat-total" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main);">0</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">Total Tasks</div>
                     </div>
-                    <div style="background: var(--panel-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16,185,129,0.1); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.2rem;"><i class="fa-solid fa-check-double"></i></div>
-                        <div><div id="wf-stat-done" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">0</div><div style="font-size: 0.8rem; color: var(--text-muted);">Completed Today</div></div>
+                    <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
+                        <div id="task-stat-pending" style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;">0</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">Pending</div>
                     </div>
-                    <div style="background: var(--panel-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245,158,11,0.1); display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.2rem;"><i class="fa-solid fa-clock"></i></div>
-                        <div><div id="wf-stat-pending" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">0</div><div style="font-size: 0.8rem; color: var(--text-muted);">Pending Actions</div></div>
+                    <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
+                        <div id="task-stat-progress" style="font-size: 1.5rem; font-weight: 800; color: #6366f1;">0</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">In Progress</div>
                     </div>
-                    <div style="background: var(--panel-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(239,68,68,0.1); display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1.2rem;"><i class="fa-solid fa-bell"></i></div>
-                        <div><div id="wf-stat-followups" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">0</div><div style="font-size: 0.8rem; color: var(--text-muted);">Follow-ups Due</div></div>
-                    </div>
-                </div>
-
-                <!-- Pre-built Automation Templates -->
-                <div style="background: var(--panel-bg); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                        <h3 style="font-size: 15px; font-weight: 700; margin: 0;"><i class="fa-solid fa-bolt" style="color: var(--color-primary); margin-right: 8px;"></i>Automation Templates</h3>
-                        <span style="font-size: 0.78rem; color: var(--text-muted);">Click to activate a workflow</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;" id="workflow-templates-grid">
-                        <!-- Templates rendered by JS -->
+                    <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
+                        <div id="task-stat-done" style="font-size: 1.5rem; font-weight: 800; color: #10b981;">0</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">Completed</div>
                     </div>
                 </div>
 
-                <!-- Active Workflow Tasks -->
-                <div style="background: var(--panel-bg); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                        <h3 style="font-size: 15px; font-weight: 700; margin: 0;"><i class="fa-solid fa-list-check" style="color: var(--color-primary); margin-right: 8px;"></i>Live Task Queue</h3>
-                        <button class="btn-secondary btn-sm" id="wf-refresh-tasks-btn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-                    </div>
-                    <div id="wf-tasks-container">
-                        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-                            <i class="fa-solid fa-inbox" style="font-size: 2rem; margin-bottom: 12px; opacity: 0.4;"></i>
-                            <div style="font-size: 0.9rem;">No workflow tasks found. Activate a template above to get started.</div>
-                        </div>
+                <!-- Filter Tabs -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="filter-btn active" data-task-filter="all">All</button>
+                    <button class="filter-btn" data-task-filter="pending">Pending</button>
+                    <button class="filter-btn" data-task-filter="in-progress">In Progress</button>
+                    <button class="filter-btn" data-task-filter="done">Done</button>
+                    <button class="filter-btn" data-task-filter="urgent" style="color: #ef4444;">Urgent</button>
+                </div>
+
+                <!-- Task List -->
+                <div id="task-list-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="text-align: center; padding: 48px; color: var(--text-muted);">
+                        <i class="fa-solid fa-clipboard-list" style="font-size: 2.5rem; margin-bottom: 12px; opacity: 0.3; display: block;"></i>
+                        <div style="font-size: 0.95rem; font-weight: 600;">No tasks yet</div>
+                        <div style="font-size: 0.82rem; margin-top: 4px;">Click "Add Task" to create your first business task</div>
                     </div>
                 </div>
 
-                <!-- AI Auto-Pilot Rules -->
-                <div style="background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(168,85,247,0.06) 100%); border: 1px solid rgba(99,102,241,0.2); border-radius: 16px; padding: 24px;">
-                    <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 6px;"><i class="fa-solid fa-robot" style="color: var(--color-primary); margin-right: 8px;"></i>AI Auto-Pilot Rules</h3>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px;">Configure when and how the AI agent should take autonomous actions without human input.</p>
-                    <div style="display: flex; flex-direction: column; gap: 14px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--panel-bg); border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div><div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">Auto-Reply to New Inquiries</div><div style="font-size: 0.78rem; color: var(--text-muted);">AI instantly replies to any new customer inquiry within 30 seconds</div></div>
-                            <label class="switch"><input type="checkbox" id="autopilot-new-inquiry" checked><span class="slider round"></span></label>
+                <!-- Add/Edit Task Modal (inline) -->
+                <div id="task-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+                    <div style="background: var(--bg-card, #fff); border-radius: 16px; padding: 28px; width: 480px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.3); border: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 id="task-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Add New Task</h3>
+                            <button id="task-modal-close" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);">&times;</button>
                         </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--panel-bg); border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div><div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">Hot Lead Alert & Escalation</div><div style="font-size: 0.78rem; color: var(--text-muted);">Notify sales team immediately when lead score crosses 75</div></div>
-                            <label class="switch"><input type="checkbox" id="autopilot-hot-lead" checked><span class="slider round"></span></label>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--panel-bg); border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div><div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">Cold Lead Re-Engagement (3 Days)</div><div style="font-size: 0.78rem; color: var(--text-muted);">Automatically send a follow-up if no reply within 3 days</div></div>
-                            <label class="switch"><input type="checkbox" id="autopilot-cold-reengagement"><span class="slider round"></span></label>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--panel-bg); border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div><div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">Auto-Send Catalog on Request</div><div style="font-size: 0.78rem; color: var(--text-muted);">Detect catalog requests and auto-attach product list to reply</div></div>
-                            <label class="switch"><input type="checkbox" id="autopilot-catalog" checked><span class="slider round"></span></label>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--panel-bg); border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div><div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">Escalate to Human After 5 AI Turns</div><div style="font-size: 0.78rem; color: var(--text-muted);">Hand conversation over if AI has not converted after 5 exchanges</div></div>
-                            <label class="switch"><input type="checkbox" id="autopilot-escalate" checked><span class="slider round"></span></label>
+                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                            <input type="text" id="task-title-input" placeholder="Task title..." style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.9rem; background: var(--bg-app, #f9fafb); color: var(--text-main);">
+                            <textarea id="task-desc-input" placeholder="Description (optional)..." rows="3" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; resize: vertical; background: var(--bg-app, #f9fafb); color: var(--text-main);"></textarea>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Due Date</label>
+                                    <input type="datetime-local" id="task-due-input" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; width: 100%; background: var(--bg-app, #f9fafb); color: var(--text-main);">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Priority</label>
+                                    <select id="task-priority-input" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; width: 100%; background: var(--bg-app, #f9fafb); color: var(--text-main);">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Tags (comma separated)</label>
+                                <input type="text" id="task-tags-input" placeholder="e.g. Follow-up, Meeting, Client" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; width: 100%; background: var(--bg-app, #f9fafb); color: var(--text-main);">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="task-reminder-check" style="width: 16px; height: 16px;">
+                                <label for="task-reminder-check" style="font-size: 0.85rem; color: var(--text-main);">Set Reminder (browser notification at due time)</label>
+                            </div>
+                            <button id="task-save-btn" style="padding: 10px; background: var(--color-primary); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 4px;">Save Task</button>
                         </div>
                     </div>
-                    <button class="btn-primary" style="margin-top: 20px;" id="save-autopilot-rules-btn"><i class="fa-solid fa-floppy-disk"></i> Save Auto-Pilot Rules</button>
                 </div>
             </div>
 
