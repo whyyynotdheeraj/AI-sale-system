@@ -164,7 +164,7 @@ class OpenAIProvider(BaseAIProvider):
             }
 
 class GroqProvider(BaseAIProvider):
-    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.3-70b-versatile"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "llama3-70b-8192"):
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
         self.model = model
 

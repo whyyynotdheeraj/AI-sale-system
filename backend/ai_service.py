@@ -92,7 +92,7 @@ def generate_sales_reply(
     biz_name = getattr(settings, 'business_name', None) or "our manufacturing company"
 
     provider_name = getattr(settings, 'ai_provider', 'groq') or 'groq'
-    model_name = getattr(settings, 'ai_model', 'llama-3.3-70b-versatile') or 'llama-3.3-70b-versatile'
+    model_name = getattr(settings, 'ai_model', 'llama3-70b-8192') or 'llama3-70b-8192'
     prompt_ver = getattr(settings, 'prompt_version', 'V2') or 'V2'
 
     # Module 1: Build Company Brain Prompt
