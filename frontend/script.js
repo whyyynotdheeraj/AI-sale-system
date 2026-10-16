@@ -2400,3 +2400,130 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
 })();
 
+// ==========================================
+// 3D INTERACTIVE PARTICLE CONSTELLATION MESH
+// ==========================================
+(function init3DParticleMesh() {
+    const canvas = document.getElementById('bg-3d-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const NUM_PARTICLES = 45;
+    const particles = [];
+    const FOV = 400;
+
+    let mouseX = width / 2;
+    let mouseY = height / 2;
+    let targetRotY = 0;
+    let targetRotX = 0;
+    let rotY = 0;
+    let rotX = 0;
+
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        targetRotY = ((mouseX - width / 2) / width) * 0.4;
+        targetRotX = ((mouseY - height / 2) / height) * -0.4;
+    }, { passive: true });
+
+    for (let i = 0; i < NUM_PARTICLES; i++) {
+        particles.push({
+            x: (Math.random() - 0.5) * width * 1.4,
+            y: (Math.random() - 0.5) * height * 1.4,
+            z: Math.random() * 600 - 300,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            vz: (Math.random() - 0.5) * 0.4,
+            baseRadius: Math.random() * 2 + 1.2
+        });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+
+        rotY += (targetRotY - rotY) * 0.05;
+        rotX += (targetRotX - rotX) * 0.05;
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        const projected = [];
+
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.z += p.vz;
+
+            const halfW = width * 0.7;
+            const halfH = height * 0.7;
+            if (p.x < -halfW) p.x = halfW;
+            if (p.x > halfW) p.x = -halfW;
+            if (p.y < -halfH) p.y = halfH;
+            if (p.y > halfH) p.y = -halfH;
+            if (p.z < -300) p.z = 300;
+            if (p.z > 300) p.z = -300;
+
+            // 3D perspective rotation
+            const x1 = p.x * cosY + p.z * sinY;
+            const z1 = -p.x * sinY + p.z * cosY;
+            const y1 = p.y * cosX - z1 * sinX;
+            const z2 = p.y * sinX + z1 * cosX;
+
+            const scale = FOV / (FOV + z2 + 400);
+            if (scale > 0) {
+                const sx = x1 * scale + width / 2;
+                const sy = y1 * scale + height / 2;
+                const radius = p.baseRadius * scale;
+                const alpha = Math.max(0.1, Math.min(0.85, (z2 + 300) / 600));
+
+                projected.push({ sx, sy, radius, alpha, scale });
+
+                ctx.beginPath();
+                ctx.arc(sx, sy, Math.max(0.8, radius), 0, Math.PI * 2);
+                ctx.fillStyle = isDark
+                    ? `rgba(168, 85, 247, ${alpha * 0.75})`
+                    : `rgba(99, 102, 241, ${alpha * 0.6})`;
+                ctx.fill();
+            }
+        }
+
+        // Draw connecting filaments in 3D
+        for (let i = 0; i < projected.length; i++) {
+            for (let j = i + 1; j < projected.length; j++) {
+                const p1 = projected[i];
+                const p2 = projected[j];
+                const dx = p1.sx - p2.sx;
+                const dy = p1.sy - p2.sy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 130) {
+                    const lineAlpha = (1 - dist / 130) * Math.min(p1.alpha, p2.alpha) * 0.35;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.sx, p1.sy);
+                    ctx.lineTo(p2.sx, p2.sy);
+                    ctx.strokeStyle = isDark
+                        ? `rgba(99, 102, 241, ${lineAlpha})`
+                        : `rgba(79, 70, 229, ${lineAlpha})`;
+                    ctx.lineWidth = Math.min(p1.scale, p2.scale) * 1.2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    render();
+})();
+
+

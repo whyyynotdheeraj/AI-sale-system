@@ -10,8 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Custom Style with Cache Buster -->
+    <link rel="stylesheet" href="style.css?v=20261017_3d">
     <!-- Apply saved theme instantly to prevent flash -->
     <script>
         (function() {
@@ -24,8 +24,9 @@
     </script>
 </head>
 <body>
-    <!-- Ambient 3D Animated Background Mesh -->
+    <!-- Ambient 3D Animated Background Mesh & Interactive Particles -->
     <div class="ambient-3d-bg" aria-hidden="true">
+        <canvas id="bg-3d-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1;"></canvas>
         <div class="aurora-orb orb-1"></div>
         <div class="aurora-orb orb-2"></div>
         <div class="aurora-orb orb-3"></div>
@@ -1062,6 +1063,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=20261017_3d"></script>
 </body>
 </html>
