@@ -2332,3 +2332,71 @@ document.addEventListener('DOMContentLoaded', () => {
         analyticsRefreshBtn.addEventListener('click', loadAITelemetry);
     }
 });
+
+// ==========================================
+// 3D INTERACTIVE CARD PARALLAX TILT ENGINE
+// ==========================================
+(function init3DCardTilt() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return;
+    }
+
+    const TILT_SELECTORS = '.conv-card, .analytics-kpi-card, .analytics-chart-card, .task-card, .profile-card, .details-section, .copilot-suggestion-card, .theme-card, .action-btn-secondary';
+    let currentCard = null;
+    let rafId = null;
+    let targetRotateX = 0;
+    let targetRotateY = 0;
+    let mousePercentX = 50;
+    let mousePercentY = 50;
+
+    function updateTilt() {
+        if (!currentCard) return;
+        currentCard.style.transform = `perspective(900px) rotateX(${targetRotateX.toFixed(2)}deg) rotateY(${targetRotateY.toFixed(2)}deg) translateZ(8px)`;
+        currentCard.style.setProperty('--mouse-x', `${mousePercentX.toFixed(1)}%`);
+        currentCard.style.setProperty('--mouse-y', `${mousePercentY.toFixed(1)}%`);
+        rafId = null;
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const card = e.target.closest(TILT_SELECTORS);
+        if (!card) {
+            if (currentCard) {
+                currentCard.style.transform = '';
+                currentCard = null;
+            }
+            return;
+        }
+
+        if (currentCard && currentCard !== card) {
+            currentCard.style.transform = '';
+        }
+        currentCard = card;
+
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        targetRotateX = ((y - centerY) / centerY) * -6; // max 6 deg
+        targetRotateY = ((x - centerX) / centerX) * 6;
+        mousePercentX = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        mousePercentY = Math.max(0, Math.min(100, (y / rect.height) * 100));
+
+        if (!rafId) {
+            rafId = requestAnimationFrame(updateTilt);
+        }
+    }, { passive: true });
+
+    document.addEventListener('mouseout', (e) => {
+        if (currentCard && (!e.relatedTarget || !currentCard.contains(e.relatedTarget))) {
+            currentCard.style.transform = '';
+            currentCard = null;
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+    }, { passive: true });
+})();
+

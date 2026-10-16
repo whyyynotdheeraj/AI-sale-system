@@ -24,6 +24,12 @@
     </script>
 </head>
 <body>
+    <!-- Ambient 3D Animated Background Mesh -->
+    <div class="ambient-3d-bg" aria-hidden="true">
+        <div class="aurora-orb orb-1"></div>
+        <div class="aurora-orb orb-2"></div>
+        <div class="aurora-orb orb-3"></div>
+    </div>
     <div class="app-container">
         <!-- LEFT SIDEBAR -->
         <aside class="sidebar">
@@ -119,9 +125,18 @@
                     </div>
                 </div>
                 <div class="navbar-right">
-                    <div class="ai-status">
-                        <span class="status-indicator active"></span>
-                        <span class="status-text" id="ai-status-label">AI Agent: Active</span>
+                    <div class="ai-status" id="ai-status-container" title="Autonomous AI Sales Intelligence">
+                        <div class="ai-orb-3d">
+                            <span class="status-indicator active"></span>
+                            <div class="ai-orb-core"></div>
+                            <div class="ai-gyro-ring ring-x"></div>
+                            <div class="ai-gyro-ring ring-y"></div>
+                            <div class="ai-gyro-ring ring-z"></div>
+                        </div>
+                        <div class="ai-status-text-wrap">
+                            <span class="status-text" id="ai-status-label">AI Agent: Active</span>
+                            <span class="ai-status-sub">24/7 Autopilot</span>
+                        </div>
                     </div>
                     <div class="nav-icon-btn">
                         <i class="fa-solid fa-bell"></i>
