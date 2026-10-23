@@ -11,11 +11,11 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style with Cache Buster -->
-    <link rel="stylesheet" href="style.css?v=20261024_cyan">
+    <link rel="stylesheet" href="style.css?v=20261017_3d">
     <!-- Apply saved theme instantly to prevent flash -->
     <script>
         (function() {
-            var t = localStorage.getItem('ai-sales-os-theme') || 'dark';
+            var t = localStorage.getItem('ai-sales-os-theme') || 'light';
             if (t === 'system') {
                 t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
@@ -280,7 +280,7 @@
                     </div>
 
                     <!-- AI Sales Intelligence Panel (NEW) -->
-                    <div class="details-section" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 16px;">
+                    <div class="details-section" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 16px;">
                         <h4 class="details-section-title" style="color: var(--color-primary); display: flex; align-items: center; justify-content: space-between;">
                             <span><i class="fa-solid fa-brain" style="margin-right: 6px;"></i> Lead Intelligence</span>
                             <button class="btn-icon-xs" id="refresh-insights-btn" title="Analyze Intent & Score"><i class="fa-solid fa-arrows-rotate"></i></button>
@@ -663,7 +663,7 @@
                         <div class="settings-section">
                             <h3 class="settings-section-title">Primary Color</h3>
                             <div class="color-swatches" id="color-swatches-container">
-                                <div class="color-swatch active" style="background-color: #06b6d4;" data-color="#6366f1"></div>
+                                <div class="color-swatch active" style="background-color: #6366f1;" data-color="#6366f1"></div>
                                 <div class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6"></div>
                                 <div class="color-swatch" style="background-color: #10b981;" data-color="#10b981"></div>
                                 <div class="color-swatch" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
@@ -803,7 +803,7 @@
                     <button class="btn-secondary btn-sm" id="analytics-refresh-btn" style="margin-left: auto;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
                 </div>
                 <div class="analytics-kpi-row">
-                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-customers">0</span><span class="kpi-label">Total Leads</span></div></div>
+                    <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-customers">0</span><span class="kpi-label">Total Leads</span></div></div>
                     <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(16,185,129,0.1); color: #10b981;"><i class="fa-solid fa-dollar-sign"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-pipeline">$0</span><span class="kpi-label">Total Pipeline</span></div></div>
                     <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;"><i class="fa-solid fa-comments"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-total-messages">0</span><span class="kpi-label">Total Messages</span></div></div>
                     <div class="analytics-kpi-card"><div class="kpi-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><span class="kpi-value" id="kpi-avg-score">0</span><span class="kpi-label">Avg Lead Score</span></div></div>
@@ -823,11 +823,11 @@
                 </div>
 
                 <!-- AI Telemetry Section -->
-                <div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(37, 99, 235, 0.06) 100%); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-top: 8px;">
+                <div style="background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(168,85,247,0.06) 100%); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-top: 8px;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                         <i class="fa-solid fa-microchip" style="color: var(--color-primary); font-size: 1.1rem;"></i>
                         <h3 style="font-size: 16px; font-weight: 700; margin: 0;">AI Engine Telemetry</h3>
-                        <span id="ai-telemetry-badge" style="margin-left: auto; padding: 3px 10px; background: rgba(6, 182, 212, 0.2); color: var(--color-primary); font-size: 0.72rem; font-weight: 700; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">Live</span>
+                        <span id="ai-telemetry-badge" style="margin-left: auto; padding: 3px 10px; background: rgba(99,102,241,0.12); color: var(--color-primary); font-size: 0.72rem; font-weight: 700; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">Live</span>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
                         <div style="background: var(--panel-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-color);">
@@ -867,7 +867,7 @@
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <button class="btn-icon" id="workflows-back-btn" title="Back to Inbox"><i class="fa-solid fa-arrow-left"></i></button>
                         <h2 style="font-size: 22px; font-weight: 700; color: var(--text-main); margin: 0;">Task Manager</h2>
-                        <span style="padding: 4px 12px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.18), rgba(37, 99, 235, 0.15)); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; border-radius: 20px; border: 1px solid rgba(6, 182, 212, 0.35);"><i class="fa-solid fa-clipboard-list"></i> Business Tasks</span>
+                        <span style="padding: 4px 12px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12)); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; border-radius: 20px; border: 1px solid rgba(99,102,241,0.2);"><i class="fa-solid fa-clipboard-list"></i> Business Tasks</span>
                     </div>
                     <button id="add-task-btn" style="padding: 8px 18px; background: var(--color-primary); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"><i class="fa-solid fa-plus"></i> Add Task</button>
                 </div>
@@ -883,7 +883,7 @@
                         <div style="font-size: 0.78rem; color: var(--text-muted);">Pending</div>
                     </div>
                     <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
-                        <div id="task-stat-progress" style="font-size: 1.5rem; font-weight: 800; color: #06b6d4;">0</div>
+                        <div id="task-stat-progress" style="font-size: 1.5rem; font-weight: 800; color: #6366f1;">0</div>
                         <div style="font-size: 0.78rem; color: var(--text-muted);">In Progress</div>
                     </div>
                     <div style="background: var(--panel-bg, var(--bg-card)); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); text-align: center;">
@@ -1063,6 +1063,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=20261024_cyan"></script>
+    <script src="script.js?v=20261017_3d"></script>
 </body>
 </html>

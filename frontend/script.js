@@ -1705,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('save-settings-appearance')?.addEventListener('click', function() {
-        const color = document.documentElement.style.getPropertyValue('--color-primary') || '#06b6d4';
+        const color = document.documentElement.style.getPropertyValue('--color-primary') || '#6366f1';
         saveSettings({ primary_color: color }, this);
     });
 
@@ -1968,7 +1968,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderFunnel(containerId, funnelData) {
         const container = document.getElementById(containerId);
         const maxVal = Math.max(...funnelData.map(f => f.count), 1);
-        const colors = ['#06b6d4', '#38bdf8', '#3b82f6', '#60a5fa', '#93c5fd', '#10b981', '#34d399', '#6ee7b7'];
+        const colors = ['#6366f1', '#818cf8', '#a78bfa', '#c4b5fd', '#ddd6fe', '#10b981', '#34d399', '#6ee7b7'];
         const bars = funnelData.map((item, i) => {
             const pct = (item.count / maxVal) * 100;
             return `<div class="funnel-row"><span class="funnel-label">${item.stage}</span><div class="funnel-bar-container"><div class="funnel-bar" style="width: ${Math.max(pct, 3)}%; background: ${colors[i]};"><span class="funnel-count">${item.count}</span></div></div></div>`;
@@ -1999,7 +1999,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const entries = Object.entries(products);
         if (entries.length === 0) { container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);">No data</div>'; return; }
         const maxVal = Math.max(...entries.map(e => e[1]), 1);
-        const colors = ['#06b6d4', '#0284c7', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9'];
+        const colors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#d946ef', '#8b5cf6'];
         const bars = entries.map((entry, i) => `<div class="product-bar-row"><div class="product-bar-label"><span>${entry[0]}</span><span style="font-weight:700;">${entry[1]}</span></div><div class="product-bar-track"><div class="product-bar-fill" style="width: ${(entry[1]/maxVal)*100}%; background: ${colors[i%colors.length]};"></div></div></div>`).join('');
         container.innerHTML = `<div class="product-bars">${bars}</div>`;
     }
@@ -2492,8 +2492,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.beginPath();
                 ctx.arc(sx, sy, Math.max(0.8, radius), 0, Math.PI * 2);
                 ctx.fillStyle = isDark
-                    ? `rgba(6, 182, 212, ${alpha * 0.9})`
-                    : `rgba(2, 132, 199, ${alpha * 0.75})`;
+                    ? `rgba(168, 85, 247, ${alpha * 0.75})`
+                    : `rgba(99, 102, 241, ${alpha * 0.6})`;
                 ctx.fill();
             }
         }
@@ -2512,8 +2512,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.moveTo(p1.sx, p1.sy);
                     ctx.lineTo(p2.sx, p2.sy);
                     ctx.strokeStyle = isDark
-                        ? `rgba(56, 189, 248, ${lineAlpha * 0.9})`
-                        : `rgba(14, 165, 233, ${lineAlpha * 0.8})`;
+                        ? `rgba(99, 102, 241, ${lineAlpha})`
+                        : `rgba(79, 70, 229, ${lineAlpha})`;
                     ctx.lineWidth = Math.min(p1.scale, p2.scale) * 1.2;
                     ctx.stroke();
                 }
